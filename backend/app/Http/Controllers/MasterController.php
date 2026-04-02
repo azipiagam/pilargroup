@@ -84,16 +84,30 @@ class MasterController extends Controller
     {
         $request->validate([
             'name'        => 'required|string',
-            'slug'        => 'required|string|unique:pilargroup.master_projects,slug',
+            'url'         => 'nullable|url',
             'description' => 'nullable|string',
         ]);
+
+        // Slug otomatis dari name
+        $slug = strtolower(str_replace(' ', '', $request->input('name')));
+
+        // Cek slug sudah ada
+        $slugExists = DB::connection('pilargroup')
+            ->table('master_projects')
+            ->where('slug', $slug)
+            ->exists();
+
+        if ($slugExists) {
+            return response()->json(['message' => 'Project dengan nama ini sudah ada'], 422);
+        }
 
         DB::connection('pilargroup')
             ->table('master_projects')
             ->insert([
                 'id'          => Str::uuid()->toString(),
                 'name'        => $request->input('name'),
-                'slug'        => $request->input('slug'),
+                'slug'        => $slug,
+                'url'         => $request->input('url'),
                 'description' => $request->input('description'),
                 'is_active'   => 1,
                 'created_at'  => now(),
@@ -107,15 +121,32 @@ class MasterController extends Controller
     {
         $request->validate([
             'name'        => 'nullable|string',
-            'slug'        => 'nullable|string|unique:pilargroup.master_projects,slug,' . $id,
+            'url'         => 'nullable|url',
             'description' => 'nullable|string',
             'is_active'   => 'nullable|boolean',
         ]);
 
         $updates = ['updated_at' => now()];
-        if ($request->input('name'))        $updates['name']        = $request->input('name');
-        if ($request->input('slug'))        $updates['slug']        = $request->input('slug');
-        if ($request->input('description')) $updates['description'] = $request->input('description');
+
+        if ($request->input('name')) {
+            $newSlug = strtolower(str_replace(' ', '', $request->input('name')));
+
+            $slugExists = DB::connection('pilargroup')
+                ->table('master_projects')
+                ->where('slug', $newSlug)
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($slugExists) {
+                return response()->json(['message' => 'Project dengan nama ini sudah ada'], 422);
+            }
+
+            $updates['name'] = $request->input('name');
+            $updates['slug'] = $newSlug;
+        }
+
+        if ($request->input('url') !== null) $updates['url']         = $request->input('url');
+        if ($request->input('description'))  $updates['description'] = $request->input('description');
         if (!is_null($request->input('is_active'))) $updates['is_active'] = $request->input('is_active');
 
         DB::connection('pilargroup')
