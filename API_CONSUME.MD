@@ -1,6 +1,9 @@
 # Testing Guide — User CRUD (pilargroup.id)
 
+<<<<<<< HEAD
 Base URL: `http://localhost:8001/api`
+=======
+
 
 ---
 
@@ -108,6 +111,7 @@ Response `201`: `{ "message": "User registered successfully", "user_id": "..." }
 - `department_id` harus ada di `master_departments`
 - `apps` harus slug yang ada di `master_projects`
 
+<<<<<<< HEAD
 ## 6. Update User
 
 ```
@@ -173,3 +177,5 @@ DELETE /master/projects/{id}
 | 404 | Data tidak ditemukan |
 | 422 | Validasi gagal |
 | 500 | Server error, cek log |
+=======
+
