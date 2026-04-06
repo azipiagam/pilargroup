@@ -3,40 +3,35 @@ import { PlayCircle, XClose } from '@untitledui/icons'
 import AppLayout from '@/layouts/AppLayout'
 import { sharedBreadcrumbItems } from '@/constants/breadcrumbs'
 import { usePageTitle } from '@/hooks/usePageTitle'
-
-const projects = [
-  {
-    label: 'Project 01',
-    value: 'Web Pilar',
-    detail: 'Project is available and ready to run.',
-  },
-  {
-    label: 'Project 02',
-    value: 'Ticketing',
-    detail: 'Project is available and ready to run.',
-  },
-  {
-    label: 'Project 03',
-    value: 'Treeview',
-    detail: 'Project is available and ready to run.',
-  },
-  {
-    label: 'Project 04',
-    value: 'Touch Point',
-    detail: 'Project is available and ready to run.',
-  },
-  {
-    label: 'Project 05',
-    value: 'Snap IT',
-    detail: 'Project is available and ready to run.',
-  },
-]
+import { getDashboardProjects } from '@/services/dashboardService'
 
 function DashboardPage({ activePath = '/dashboard' }) {
   usePageTitle()
   const [searchQuery, setSearchQuery] = useState('')
+  const [projects, setProjects] = useState([])
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true)
+  const [projectsError, setProjectsError] = useState('')
   const [isPopupOpen, setPopupOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
+
+  const loadProjects = async () => {
+    setProjectsError('')
+    setIsLoadingProjects(true)
+
+    try {
+      const nextProjects = await getDashboardProjects()
+      setProjects(nextProjects)
+    } catch (error) {
+      setProjects([])
+      setProjectsError(error?.message || 'Failed to load projects from database.')
+    } finally {
+      setIsLoadingProjects(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadProjects()
+  }, [])
 
   useEffect(() => {
     if (!isPopupOpen) {
@@ -81,6 +76,56 @@ function DashboardPage({ activePath = '/dashboard' }) {
     )
   })
 
+  const handleRefresh = () => {
+    setSearchQuery('')
+    void loadProjects()
+  }
+
+  let content = null
+
+  if (isLoadingProjects) {
+    content = (
+      <article className="dashboard-empty-state">
+        <p className="dashboard-empty-state__title">Loading projects...</p>
+        <p className="dashboard-empty-state__detail">
+          Sedang mengambil data project dari master project.
+        </p>
+      </article>
+    )
+  } else if (projectsError) {
+    content = (
+      <article className="dashboard-empty-state">
+        <p className="dashboard-empty-state__title">Project gagal dimuat</p>
+        <p className="dashboard-empty-state__detail">{projectsError}</p>
+      </article>
+    )
+  } else if (filteredProjects.length === 0) {
+    content = (
+      <article className="dashboard-empty-state">
+        <p className="dashboard-empty-state__title">No projects found</p>
+        <p className="dashboard-empty-state__detail">
+          Try another keyword or use refresh to reset the search.
+        </p>
+      </article>
+    )
+  } else {
+    content = filteredProjects.map((project) => (
+      <article className="dashboard-card" key={project.projectId}>
+        <p className="dashboard-card__label">{project.label}</p>
+        <strong className="dashboard-card__value">{project.value}</strong>
+        <p className="dashboard-card__detail">{project.detail}</p>
+        <button
+          type="button"
+          className="dashboard-card__action"
+          onClick={() => handleOpenPopup(project)}
+        >
+          <PlayCircle size={16} />
+          <span>Run</span>
+        </button>
+      </article>
+    ))
+  }
+
   return (
     <AppLayout
       headerProps={{
@@ -97,38 +142,13 @@ function DashboardPage({ activePath = '/dashboard' }) {
           ariaLabel: 'Open notifications',
           modalTitle: 'Notifications',
         },
-        onRefresh: () => setSearchQuery(''),
+        onRefresh: handleRefresh,
         primaryActionLabel: 'Create',
         activePath,
       }}
     >
       <section className="dashboard-content">
-        <div className="dashboard-overview">
-          {filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
-              <article className="dashboard-card" key={project.value}>
-                <p className="dashboard-card__label">{project.label}</p>
-                <strong className="dashboard-card__value">{project.value}</strong>
-                <p className="dashboard-card__detail">{project.detail}</p>
-                <button
-                  type="button"
-                  className="dashboard-card__action"
-                  onClick={() => handleOpenPopup(project)}
-                >
-                  <PlayCircle size={16} />
-                  <span>Run</span>
-                </button>
-              </article>
-            ))
-          ) : (
-            <article className="dashboard-empty-state">
-              <p className="dashboard-empty-state__title">No projects found</p>
-              <p className="dashboard-empty-state__detail">
-                Try another keyword or use refresh to reset the search.
-              </p>
-            </article>
-          )}
-        </div>
+        <div className="dashboard-overview">{content}</div>
       </section>
 
       {isPopupOpen && selectedProject ? (

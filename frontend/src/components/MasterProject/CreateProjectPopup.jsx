@@ -4,7 +4,7 @@ import { Folder, SearchMd, XClose } from '@untitledui/icons'
 const initialFormState = {
   name: '',
   code: '',
-  projectUrl: '',
+  url: '',
   status: 'Active',
   description: '',
   divisions: [],
@@ -69,7 +69,7 @@ function CreateProjectPopup({
     onSubmit?.({
       name: formState.name.trim(),
       code: formState.code.trim().toUpperCase(),
-      projectUrl: formState.projectUrl.trim(),
+      url: formState.url.trim(),
       status: formState.status,
       description:
         formState.description.trim() ||
@@ -164,12 +164,12 @@ function CreateProjectPopup({
                     <input
                       type="url"
                       className="register-user-popup__input"
-                      value={formState.projectUrl}
+                      value={formState.url}
                       placeholder="Contoh: https://project.pilar.group"
                       onChange={(event) =>
                         setFormState((current) => ({
                           ...current,
-                          projectUrl: event.target.value,
+                          url: event.target.value,
                         }))
                       }
                     />

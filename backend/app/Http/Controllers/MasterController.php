@@ -86,6 +86,7 @@ class MasterController extends Controller
             'name'        => 'required|string',
             'url'         => 'nullable|url',
             'description' => 'nullable|string',
+            'is_active'   => 'nullable|boolean',
         ]);
 
         // Slug otomatis dari name
@@ -109,7 +110,7 @@ class MasterController extends Controller
                 'slug'        => $slug,
                 'url'         => $request->input('url'),
                 'description' => $request->input('description'),
-                'is_active'   => 1,
+                'is_active'   => (int) $request->input('is_active', 1),
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
@@ -147,7 +148,7 @@ class MasterController extends Controller
 
         if ($request->input('url') !== null) $updates['url']         = $request->input('url');
         if ($request->input('description'))  $updates['description'] = $request->input('description');
-        if (!is_null($request->input('is_active'))) $updates['is_active'] = $request->input('is_active');
+        if (!is_null($request->input('is_active'))) $updates['is_active'] = (int) $request->input('is_active');
 
         DB::connection('pilargroup')
             ->table('master_projects')

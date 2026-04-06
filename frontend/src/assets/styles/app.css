@@ -1402,6 +1402,86 @@
   line-height: 1.7;
 }
 
+.users-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.users-table-pagination__summary {
+  margin: 0;
+  color: #5a6b88;
+  font-size: 0.92rem;
+}
+
+.users-table-pagination__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.users-table-pagination__button {
+  min-width: 42px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid rgba(26, 42, 87, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--primary-blue);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.users-table-pagination__button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(42, 157, 143, 0.35);
+  box-shadow: 0 10px 20px rgba(26, 42, 87, 0.08);
+}
+
+.users-table-pagination__button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(42, 157, 143, 0.14),
+    0 10px 20px rgba(26, 42, 87, 0.08);
+}
+
+.users-table-pagination__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.users-table-pagination__button--active {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-teal-dark) 100%);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(42, 157, 143, 0.22);
+}
+
+.users-table-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--neutral-gray);
+  font-weight: 700;
+}
+
 .master-project-summary {
   position: relative;
   overflow: hidden;
@@ -1713,6 +1793,114 @@
   align-self: start;
 }
 
+.master-departments-panel {
+  padding: 24px;
+  display: grid;
+  gap: 22px;
+}
+
+.master-departments-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.master-departments-panel__description {
+  margin: 0;
+  color: #5a6b88;
+  line-height: 1.7;
+}
+
+.master-departments-panel__description code {
+  color: var(--primary-blue);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85em;
+}
+
+.master-departments-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.master-departments-card {
+  cursor: default;
+}
+
+.master-departments-card__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.master-departments-card__action {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(26, 42, 87, 0.12);
+  border-radius: 999px;
+  background: rgba(24, 43, 88, 0.04);
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.master-departments-card__action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(42, 157, 143, 0.36);
+  background: rgba(42, 157, 143, 0.08);
+  box-shadow: 0 12px 26px rgba(17, 38, 75, 0.08);
+}
+
+.master-departments-card__action:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(42, 157, 143, 0.14),
+    0 12px 26px rgba(17, 38, 75, 0.08);
+}
+
+.master-departments-card__action--danger {
+  border-color: rgba(180, 35, 24, 0.12);
+  background: rgba(180, 35, 24, 0.04);
+  color: #b42318;
+}
+
+.master-departments-card__action--danger:hover {
+  border-color: rgba(180, 35, 24, 0.28);
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.master-departments-feedback {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.master-departments-feedback--success {
+  border: 1px solid rgba(24, 120, 110, 0.14);
+  background: rgba(42, 157, 143, 0.1);
+  color: #18786e;
+}
+
+.master-departments-feedback--error {
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  background: rgba(239, 68, 68, 0.08);
+  color: #b42318;
+}
+
 .register-user-popup {
   width: min(100%, 560px);
 }
@@ -1730,6 +1918,10 @@
 .register-user-popup__field {
   display: grid;
   gap: 0.5rem;
+}
+
+.register-user-popup__field--full {
+  grid-column: 1 / -1;
 }
 
 .register-user-popup__label {
@@ -1762,6 +1954,25 @@
   border-color: rgba(42, 157, 143, 0.7);
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.12);
+}
+
+.master-departments-popup__textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.master-departments-delete-popup {
+  width: min(100%, 520px);
+}
+
+.master-departments-delete-popup__button {
+  color: #fff;
+  background: linear-gradient(135deg, #d92d20 0%, #b42318 100%);
+  box-shadow: 0 16px 28px rgba(180, 35, 24, 0.2);
+}
+
+.master-departments-delete-popup__button:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #b42318 100%);
 }
 
 .master-project-popup {
@@ -1981,7 +2192,8 @@
 
   .dashboard-overview,
   .dashboard-grid,
-  .master-project-grid {
+  .master-project-grid,
+  .master-departments-list {
     grid-template-columns: 1fr;
   }
 
@@ -1990,6 +2202,7 @@
   }
 
   .users-table-card__header,
+  .master-departments-panel__header,
   .master-project-panel__header,
   .master-project-detail__hero {
     flex-direction: column;
@@ -1997,6 +2210,19 @@
 
   .users-table-card__action {
     width: 100%;
+  }
+
+  .users-table-pagination {
+    align-items: stretch;
+  }
+
+  .users-table-pagination__summary,
+  .users-table-pagination__controls {
+    width: 100%;
+  }
+
+  .users-table-pagination__controls {
+    justify-content: flex-start;
   }
 
   .sidebar-overlay {
@@ -2065,6 +2291,10 @@
   .master-project-user {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .master-departments-card__action {
+    width: 100%;
   }
 
   .users-table__avatar {

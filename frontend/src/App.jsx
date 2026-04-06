@@ -6,6 +6,7 @@ import {
 } from '@/constants/navigation'
 import DashboardPage from '@/pages/DashboardPage'
 import LoginPage from '@/pages/LoginPage'
+import MasterDepartementsPage from '@/pages/MasterDepartements'
 import MasterProjectPage from '@/pages/MasterProject'
 import UserPage from '@/pages/UserPage'
 import { isAuthenticated } from '@/services/api'
@@ -14,6 +15,7 @@ import '@/assets/styles/app.css'
 const routes = {
   '/dashboard': DashboardPage,
   '/login': LoginPage,
+  '/master-departments': MasterDepartementsPage,
   '/master-project': MasterProjectPage,
   '/users': UserPage,
 }

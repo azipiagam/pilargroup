@@ -1,7 +1,7 @@
-import MasterProjectView from '@/components/MasterProject'
+import ProjectsCardView from '@/components/MasterProject/ProjectsCardView'
 
 function MasterProjectPage() {
-  return <MasterProjectView />
+  return <ProjectsCardView activePath="/master-project" />
 }
 
 export default MasterProjectPage

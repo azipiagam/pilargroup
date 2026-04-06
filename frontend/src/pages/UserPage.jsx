@@ -1,67 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { UserPlus01 } from '@untitledui/icons'
 
-import RegisterUserPopup from '@/components/users/RegisterUserPopup'
 import AppLayout from '@/layouts/AppLayout'
 import { sharedBreadcrumbItems } from '@/constants/breadcrumbs'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { getManagedUsers } from '@/services/manageUsers'
 
-const initialUsers = [
-  {
-    id: 'USR-001',
-    name: 'Al Fatih',
-    email: 'alfatih@pilar.group',
-    division: 'Finance',
-    role: 'Frontend Developer',
-    status: 'Active',
-    lastActive: '2 minutes ago',
-  },
-  {
-    id: 'USR-002',
-    name: 'Rina Aprilia',
-    email: 'rina.aprilia@pilar.group',
-    division: 'Legal',
-    role: 'UI Designer',
-    status: 'Pending',
-    lastActive: '15 minutes ago',
-  },
-  {
-    id: 'USR-003',
-    name: 'Dimas Pratama',
-    email: 'dimas.pratama@pilar.group',
-    division: 'Product',
-    role: 'Backend Engineer',
-    status: 'Active',
-    lastActive: '32 minutes ago',
-  },
-  {
-    id: 'USR-004',
-    name: 'Nadia Putri',
-    email: 'nadia.putri@pilar.group',
-    division: 'Finance',
-    role: 'Business Analyst',
-    status: 'Inactive',
-    lastActive: 'Yesterday',
-  },
-  {
-    id: 'USR-005',
-    name: 'Bagas Wicaksono',
-    email: 'bagas.wicaksono@pilar.group',
-    division: 'Product',
-    role: 'QA Engineer',
-    status: 'Active',
-    lastActive: '1 hour ago',
-  },
-  {
-    id: 'USR-006',
-    name: 'Salsa Maharani',
-    email: 'salsa.maharani@pilar.group',
-    division: 'Legal',
-    role: 'Project Manager',
-    status: 'Pending',
-    lastActive: '3 hours ago',
-  },
-]
+const USERS_PER_PAGE = 10
 
 function getInitials(name) {
   return name
@@ -72,44 +17,71 @@ function getInitials(name) {
     .join('')
 }
 
-function getNextUserId(users) {
-  const highestUserNumber = users.reduce((highest, user) => {
-    const currentNumber = Number.parseInt(user.id.replace(/\D/g, ''), 10)
+function getPaginationItems(currentPage, totalPages) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }
 
-    if (Number.isNaN(currentNumber)) {
-      return highest
-    }
+  const paginationItems = [1]
+  const windowStart = Math.max(2, currentPage - 1)
+  const windowEnd = Math.min(totalPages - 1, currentPage + 1)
 
-    return Math.max(highest, currentNumber)
-  }, 0)
+  if (windowStart > 2) {
+    paginationItems.push('start-ellipsis')
+  }
 
-  return `USR-${String(highestUserNumber + 1).padStart(3, '0')}`
+  for (let page = windowStart; page <= windowEnd; page += 1) {
+    paginationItems.push(page)
+  }
+
+  if (windowEnd < totalPages - 1) {
+    paginationItems.push('end-ellipsis')
+  }
+
+  paginationItems.push(totalPages)
+
+  return paginationItems
 }
 
 function UserPage() {
   usePageTitle()
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [userList, setUserList] = useState(initialUsers)
-  const [isRegisterPopupOpen, setRegisterPopupOpen] = useState(false)
+  const [userList, setUserList] = useState([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
+  const [usersError, setUsersError] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
 
-  const handleRegisterUser = (formValues) => {
-    setUserList((currentUsers) => [
-      {
-        id: getNextUserId(currentUsers),
-        name: formValues.name,
-        email: formValues.email,
-        division: formValues.division,
-        role: formValues.role,
-        status: 'Pending',
-        lastActive: 'Just now',
-      },
-      ...currentUsers,
-    ])
-    setRegisterPopupOpen(false)
+  const loadUsers = async () => {
+    setUsersError('')
+    setIsLoadingUsers(true)
+
+    try {
+      const users = await getManagedUsers()
+      setUserList(users)
+    } catch (error) {
+      setUserList([])
+      setUsersError(error?.message || 'Failed to load users from database.')
+    } finally {
+      setIsLoadingUsers(false)
+    }
   }
 
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+  useEffect(() => {
+    void loadUsers()
+  }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [normalizedSearchQuery])
+
+  const handleRefresh = () => {
+    setSearchQuery('')
+    setCurrentPage(1)
+    void loadUsers()
+  }
+
   const filteredUsers = userList.filter(({ id, name, email, division, role, status }) => {
     if (!normalizedSearchQuery) {
       return true
@@ -119,6 +91,27 @@ function UserPage() {
       field.toLowerCase().includes(normalizedSearchQuery),
     )
   })
+  const totalUsers = filteredUsers.length
+  const totalPages = Math.max(1, Math.ceil(totalUsers / USERS_PER_PAGE))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const pageStartIndex = (safeCurrentPage - 1) * USERS_PER_PAGE
+  const pageEndIndex = pageStartIndex + USERS_PER_PAGE
+  const paginatedUsers = filteredUsers.slice(pageStartIndex, pageEndIndex)
+  const paginationItems = getPaginationItems(safeCurrentPage, totalPages)
+  const visibleFrom = totalUsers === 0 ? 0 : pageStartIndex + 1
+  const visibleTo = Math.min(pageEndIndex, totalUsers)
+
+  let tableMessage = ''
+
+  if (isLoadingUsers) {
+    tableMessage = 'Loading users from database...'
+  } else if (usersError) {
+    tableMessage = usersError
+  } else if (normalizedSearchQuery) {
+    tableMessage = 'No users found. Try another keyword or use refresh to reset the search.'
+  } else {
+    tableMessage = 'No users available.'
+  }
 
   return (
     <AppLayout
@@ -136,7 +129,7 @@ function UserPage() {
           ariaLabel: 'Open notifications',
           modalTitle: 'Notifications',
         },
-        onRefresh: () => setSearchQuery(''),
+        onRefresh: handleRefresh,
         activePath: '/users',
       }}
     >
@@ -147,14 +140,16 @@ function UserPage() {
               <p className="dashboard-panel__eyebrow">User Directory</p>
               <h2 className="dashboard-panel__title">Users Table</h2>
               <p className="users-table-card__description">
-                Kelola daftar user dan tambahkan user baru lewat popup registrasi.
+                Daftar user diambil langsung dari database melalui endpoint user
+                management.
               </p>
             </div>
 
             <button
               type="button"
               className="users-table-card__action"
-              onClick={() => setRegisterPopupOpen(true)}
+              disabled
+              title="Form registrasi belum disesuaikan dengan payload API /api/users."
             >
               <UserPlus01 size={18} aria-hidden="true" />
               Registrasi User
@@ -175,9 +170,9 @@ function UserPage() {
               </thead>
 
               <tbody>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id}>
+                {paginatedUsers.length > 0 ? (
+                  paginatedUsers.map((user) => (
+                    <tr key={user.userId}>
                       <td>
                         <div className="users-table__identity">
                           <span className="users-table__avatar">{getInitials(user.name)}</span>
@@ -189,19 +184,23 @@ function UserPage() {
                         </div>
                       </td>
                       <td>
-                        <a
-                          href={`mailto:${user.email}`}
-                          className="users-table__link"
-                          onClick={(event) => event.preventDefault()}
-                        >
-                          {user.email}
-                        </a>
+                        {user.email !== '-' ? (
+                          <a
+                            href={`mailto:${user.email}`}
+                            className="users-table__link"
+                            onClick={(event) => event.preventDefault()}
+                          >
+                            {user.email}
+                          </a>
+                        ) : (
+                          user.email
+                        )}
                       </td>
                       <td>{user.division}</td>
                       <td>{user.role}</td>
                       <td>
                         <span
-                          className={`users-table__status users-table__status--${user.status.toLowerCase()}`}
+                          className={`users-table__status users-table__status--${user.statusKey}`}
                         >
                           {user.status}
                         </span>
@@ -212,24 +211,67 @@ function UserPage() {
                 ) : (
                   <tr>
                     <td colSpan="6">
-                      <div className="users-table__empty">
-                        No users found. Try another keyword or use refresh to reset the
-                        search.
-                      </div>
+                      <div className="users-table__empty">{tableMessage}</div>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {!isLoadingUsers && !usersError && totalUsers > 0 ? (
+            <div className="users-table-pagination">
+              <p className="users-table-pagination__summary">
+                Showing {visibleFrom}-{visibleTo} of {totalUsers} users
+              </p>
+
+              <div className="users-table-pagination__controls" aria-label="Users pagination">
+                <button
+                  type="button"
+                  className="users-table-pagination__button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={safeCurrentPage === 1}
+                >
+                  Previous
+                </button>
+
+                {paginationItems.map((item) =>
+                  typeof item === 'number' ? (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`users-table-pagination__button${
+                        item === safeCurrentPage ? ' users-table-pagination__button--active' : ''
+                      }`}
+                      onClick={() => setCurrentPage(item)}
+                      aria-current={item === safeCurrentPage ? 'page' : undefined}
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    <span
+                      key={item}
+                      className="users-table-pagination__ellipsis"
+                      aria-hidden="true"
+                    >
+                      ...
+                    </span>
+                  ),
+                )}
+
+                <button
+                  type="button"
+                  className="users-table-pagination__button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : null}
         </article>
       </section>
-
-      <RegisterUserPopup
-        isOpen={isRegisterPopupOpen}
-        onClose={() => setRegisterPopupOpen(false)}
-        onSubmit={handleRegisterUser}
-      />
     </AppLayout>
   )
 }

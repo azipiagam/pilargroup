@@ -1,5 +1,6 @@
 import {
   BarChartSquare02,
+  Database01,
   Folder,
   LogOut01,
   PieChart03,
@@ -10,7 +11,12 @@ import {
 } from '@untitledui/icons'
 
 export const defaultNavigationPath = '/dashboard'
-export const implementedNavigationPaths = ['/dashboard', '/users', '/master-project']
+export const implementedNavigationPaths = [
+  '/dashboard',
+  '/master-departments',
+  '/users',
+  '/master-project',
+]
 
 export const primaryNavigationItems = [
   {
@@ -24,9 +30,23 @@ export const primaryNavigationItems = [
     icon: Users01,
   },
   {
-    label: 'Master Project',
-    href: '/master-project',
-    icon: Folder,
+    id: 'master',
+    label: 'Master',
+    icon: Database01,
+    children: [
+      {
+        id: 'master-project',
+        label: 'Project',
+        href: '/master-project',
+        icon: Folder,
+      },
+      {
+        id: 'master-departments',
+        label: 'Departments',
+        href: '/master-departments',
+        icon: Users01,
+      },
+    ],
   },
   {
     label: 'Analytics',
