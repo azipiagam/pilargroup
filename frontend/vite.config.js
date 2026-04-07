@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      allowedHosts: [
+      'rational-gertie-acquiescently.ngrok-free.dev',
+      ],
       host: '127.0.0.1',
       port: 5173,
       strictPort: true,

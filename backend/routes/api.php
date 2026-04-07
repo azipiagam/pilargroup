@@ -29,6 +29,7 @@ Route::prefix('users')
         Route::post('/', [UserManagementController::class, 'store']);
         Route::get('/{id}', [UserManagementController::class, 'show']);
         Route::put('/{id}', [UserManagementController::class, 'update']);
+        Route::delete('/{id}', [UserManagementController::class, 'destroy']);
     });
 
 Route::prefix('master')

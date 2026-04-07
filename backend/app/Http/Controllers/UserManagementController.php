@@ -188,17 +188,22 @@ class UserManagementController extends Controller
         if ($request->input('job_level'))    $updates['job_level']      = $request->input('job_level');
         if (!is_null($request->input('is_active'))) $updates['is_active'] = $request->input('is_active');
 
-        if ($request->input('internal_id')) {
-            $internalIdExists = DB::connection('pilargroup')
-                ->table('central_users')
-                ->where('internal_id', $request->input('internal_id'))
-                ->where('id', '!=', $id)
-                ->exists();
+        if (array_key_exists('internal_id', $request->all())) {
+            $internalId = $request->input('internal_id');
 
-            if ($internalIdExists) {
-                return response()->json(['message' => 'Internal ID already exists'], 422);
+            if (!is_null($internalId)) {
+                $internalIdExists = DB::connection('pilargroup')
+                    ->table('central_users')
+                    ->where('internal_id', $internalId)
+                    ->where('id', '!=', $id)
+                    ->exists();
+
+                if ($internalIdExists) {
+                    return response()->json(['message' => 'Internal ID already exists'], 422);
+                }
             }
-            $updates['internal_id'] = $request->input('internal_id');
+
+            $updates['internal_id'] = $internalId;
         }
 
         DB::connection('pilargroup')
@@ -206,35 +211,75 @@ class UserManagementController extends Controller
             ->where('id', $id)
             ->update($updates);
 
-        if ($request->input('apps') !== null) {
+        if ($request->has('apps')) {
+            $selectedApps = array_values(array_filter((array) $request->input('apps'), function ($app) {
+                return is_string($app) && trim($app) !== '';
+            }));
+
             $projectIds = DB::connection('pilargroup')
                 ->table('master_projects')
-                ->whereIn('slug', $request->input('apps'))
-                ->pluck('id');
+                ->whereIn('slug', $selectedApps)
+                ->pluck('id')
+                ->toArray();
 
-            // Hapus semua relasi lama lalu insert baru
-            DB::connection('pilargroup')
-                ->table('central_user_projects')
-                ->where('user_id', $id)
-                ->delete();
-
-            foreach ($projectIds as $projectId) {
+            DB::connection('pilargroup')->transaction(function () use ($id, $now, $projectIds) {
                 DB::connection('pilargroup')
                     ->table('central_user_projects')
-                    ->insert([
-                        'id'         => Str::uuid()->toString(),
-                        'user_id'    => $id,
-                        'project_id' => $projectId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-            }
+                    ->where('user_id', $id)
+                    ->delete();
+
+                foreach ($projectIds as $projectId) {
+                    DB::connection('pilargroup')
+                        ->table('central_user_projects')
+                        ->insert([
+                            'id'         => Str::uuid()->toString(),
+                            'user_id'    => $id,
+                            'project_id' => $projectId,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                }
+            });
         }
 
         return response()->json(['message' => 'User updated successfully']);
     }
 
     // GET /api/users/{id} → detail user
+    // DELETE /api/users/{id} -> delete user
+    public function destroy($id)
+    {
+        $user = DB::connection('pilargroup')
+            ->table('central_users')
+            ->where('id', $id)
+            ->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        try {
+            DB::connection('pilargroup')->transaction(function () use ($id) {
+                DB::connection('pilargroup')
+                    ->table('central_user_projects')
+                    ->where('user_id', $id)
+                    ->delete();
+
+                DB::connection('pilargroup')
+                    ->table('central_users')
+                    ->where('id', $id)
+                    ->delete();
+            });
+
+            return response()->json(['message' => 'User deleted successfully']);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Error deleting user',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function show($id)
     {
         $user = DB::connection('pilargroup')

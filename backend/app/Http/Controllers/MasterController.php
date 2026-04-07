@@ -80,12 +80,25 @@ class MasterController extends Controller
 
     // ===== PROJECTS =====
 
-    public function getProjects()
+    public function getProjects(Request $request)
     {
-        $projects = DB::connection('pilargroup')
+        // Get all projects, ignoring any default limits
+        $limit = $request->input('limit', null);
+        $query = DB::connection('pilargroup')
             ->table('master_projects')
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+        
+        if ($limit && $limit != -1) {
+            $query->limit($limit);
+        }
+        
+        $projects = $query->get();
+        
+        \Log::info('Projects fetched', [
+            'count' => count($projects),
+            'limit' => $limit
+        ]);
+        
         return response()->json($projects);
     }
 

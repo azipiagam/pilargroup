@@ -23,7 +23,7 @@ class AuthMiddleware
                 'auth_username' => $payload->get('username'),
                 'auth_name'     => $payload->get('name'),
                 'department'   => $payload->get('department'),
-                'apps'         => $payload->get('apps') ?? [],
+                'auth_apps'    => $payload->get('apps') ?? [],
             ]);
 
         } catch (TokenExpiredException $e) {
