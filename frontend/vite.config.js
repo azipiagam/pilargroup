@@ -5,7 +5,9 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000'
+  const apiProxyTarget = mode === 'development'
+    ? env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
+    : env.VITE_API_PROXY_TARGET
 
   return {
     plugins: [react()],
