@@ -58,9 +58,26 @@ function LoginPage() {
         }
 
         const html = await res.text()
-        document.open()
-        document.write(html)
-        document.close()
+        const parsed = new DOMParser().parseFromString(html, 'text/html')
+
+        const form = document.createElement('form')
+        form.method = 'POST'
+        form.action = parsed.querySelector('form')?.action ?? ''
+
+        const inputSaml = document.createElement('input')
+        inputSaml.type = 'hidden'
+        inputSaml.name = 'SAMLResponse'
+        inputSaml.value = parsed.querySelector('input[name="SAMLResponse"]')?.value ?? ''
+
+        const inputRelay = document.createElement('input')
+        inputRelay.type = 'hidden'
+        inputRelay.name = 'RelayState'
+        inputRelay.value = parsed.querySelector('input[name="RelayState"]')?.value ?? ''
+
+        form.appendChild(inputSaml)
+        form.appendChild(inputRelay)
+        document.body.appendChild(form)
+        form.submit()
         return
       }
 

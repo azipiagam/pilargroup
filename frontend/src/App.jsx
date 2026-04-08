@@ -26,7 +26,7 @@ async function handleSamlIfNeeded() {
   if (!samlToken || !isAuthenticated()) return false
 
   try {
-    const token = getToken()  // ambil JWT dari localStorage
+    const token = getToken()
     const res = await fetch('/api/saml/respond', {
       method: 'POST',
       headers: {
@@ -39,10 +39,27 @@ async function handleSamlIfNeeded() {
     if (!res.ok) return false
 
     const html = await res.text()
-    document.open()
-    document.write(html)
-    document.close()
-    return true  // stop normal flow
+    const parsed = new DOMParser().parseFromString(html, 'text/html')
+
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = parsed.querySelector('form')?.action ?? ''
+
+    const inputSaml = document.createElement('input')
+    inputSaml.type = 'hidden'
+    inputSaml.name = 'SAMLResponse'
+    inputSaml.value = parsed.querySelector('input[name="SAMLResponse"]')?.value ?? ''
+
+    const inputRelay = document.createElement('input')
+    inputRelay.type = 'hidden'
+    inputRelay.name = 'RelayState'
+    inputRelay.value = parsed.querySelector('input[name="RelayState"]')?.value ?? ''
+
+    form.appendChild(inputSaml)
+    form.appendChild(inputRelay)
+    document.body.appendChild(form)
+    form.submit()
+    return true
 
   } catch {
     return false
