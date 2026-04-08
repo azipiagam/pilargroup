@@ -31,13 +31,13 @@ class SamlController extends Controller
             ],
 
             'sp' => [
-                'entityId' => 'https://assetit.pilargroup.id',
+                'entityId' => 'http://assetit.pilargroup.id',
                 'assertionConsumerService' => [
-                    'url'     => 'https://assetit.pilargroup.id/saml/acs',
+                    'url'     => 'http://assetit.pilargroup.id/saml/acs',
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
                 ],
                 'singleLogoutService' => [
-                    'url'     => 'https://assetit.pilargroup.id/saml/slo',
+                    'url'     => 'http://assetit.pilargroup.id/saml/slo',
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
                 ],
                 'NameIDFormat' => 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
@@ -162,7 +162,7 @@ class SamlController extends Controller
         $certContent = file_get_contents(storage_path('app/saml/saml.crt'));
         $keyContent  = file_get_contents(storage_path('app/saml/saml.key'));
 
-        $acsUrl     = $pending->acs_url;
+        $acsUrl = 'http://assetit.pilargroup.id/saml/acs';
         $relayState = $pending->relay_state ?? '';
 
         // Build SAML Response XML
@@ -184,7 +184,7 @@ class SamlController extends Controller
         </saml:Subject>
         <saml:Conditions NotBefore="{$now}" NotOnOrAfter="{$notOnOrAfter}">
             <saml:AudienceRestriction>
-                <saml:Audience>https://assetit.pilargroup.id</saml:Audience>
+                <saml:Audience>http://assetit.pilargroup.id</saml:Audience>
             </saml:AudienceRestriction>
         </saml:Conditions>
         <saml:AuthnStatement AuthnInstant="{$now}" SessionIndex="{$assertionId}">
