@@ -172,34 +172,39 @@ class SamlController extends Controller
         $assertionId  = '_' . bin2hex(random_bytes(16));
         $issuer       = $this->getSamlSettings()['idp']['entityId'];
 
-        $assertionXml = <<<XML
-<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
-    ID="{$assertionId}" Version="2.0" IssueInstant="{$now}">
-    <saml:Issuer>{$issuer}</saml:Issuer>
-    <saml:Subject>
-        <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">{$user->username}</saml:NameID>
-        <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
-            <saml:SubjectConfirmationData NotOnOrAfter="{$notOnOrAfter}" Recipient="{$acsUrl}"/>
-        </saml:SubjectConfirmation>
-    </saml:Subject>
-    <saml:Conditions NotBefore="{$now}" NotOnOrAfter="{$notOnOrAfter}">
-        <saml:AudienceRestriction>
-            <saml:Audience>https://assetit.pilargroup.id</saml:Audience>
-        </saml:AudienceRestriction>
-    </saml:Conditions>
-    <saml:AttributeStatement>
-        <saml:Attribute Name="username">
-            <saml:AttributeValue>{$user->username}</saml:AttributeValue>
-        </saml:Attribute>
-        <saml:Attribute Name="email">
-            <saml:AttributeValue>{$user->email}</saml:AttributeValue>
-        </saml:Attribute>
-        <saml:Attribute Name="name">
-            <saml:AttributeValue>{$user->name}</saml:AttributeValue>
-        </saml:Attribute>
-    </saml:AttributeStatement>
-</saml:Assertion>
-XML;
+    $assertionXml = <<<XML
+    <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+        ID="{$assertionId}" Version="2.0" IssueInstant="{$now}">
+        <saml:Issuer>{$issuer}</saml:Issuer>
+        <saml:Subject>
+            <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">{$user->username}</saml:NameID>
+            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml:SubjectConfirmationData NotOnOrAfter="{$notOnOrAfter}" Recipient="{$acsUrl}"/>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+        <saml:Conditions NotBefore="{$now}" NotOnOrAfter="{$notOnOrAfter}">
+            <saml:AudienceRestriction>
+                <saml:Audience>https://assetit.pilargroup.id</saml:Audience>
+            </saml:AudienceRestriction>
+        </saml:Conditions>
+        <saml:AuthnStatement AuthnInstant="{$now}" SessionIndex="{$assertionId}">
+            <saml:AuthnContext>
+                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml:AuthnContextClassRef>
+            </saml:AuthnContext>
+        </saml:AuthnStatement>
+        <saml:AttributeStatement>
+            <saml:Attribute Name="username">
+                <saml:AttributeValue>{$user->username}</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="email">
+                <saml:AttributeValue>{$user->email}</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="name">
+                <saml:AttributeValue>{$user->name}</saml:AttributeValue>
+            </saml:Attribute>
+        </saml:AttributeStatement>
+    </saml:Assertion>
+    XML;
 
         // Sign assertion pakai saml.key
         $signedAssertion = $this->signXml($assertionXml, $keyContent, $certContent);
