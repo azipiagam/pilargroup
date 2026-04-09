@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\SnipeItService;
 
 class UserManagementController extends Controller
 {
@@ -124,6 +125,13 @@ class UserManagementController extends Controller
                     ]);
             }
 
+            $newUser = (object) [
+                'username' => $request->input('username'),
+                'name'     => $request->input('name'),
+                'email'    => $request->input('email'),
+            ];
+            (new SnipeItService())->syncUser($newUser);
+
             return response()->json([
                 'message' => 'User registered successfully',
                 'user_id' => $userId,
@@ -210,6 +218,14 @@ class UserManagementController extends Controller
             ->table('central_users')
             ->where('id', $id)
             ->update($updates);
+
+        if (isset($updates['username']) || isset($updates['name']) || isset($updates['email'])) {
+            $updatedUser = DB::connection('pilargroup')
+                ->table('central_users')
+                ->where('id', $id)
+                ->first();
+            (new SnipeItService())->syncUser($updatedUser);
+        }
 
         if ($request->has('apps')) {
             $selectedApps = array_values(array_filter((array) $request->input('apps'), function ($app) {
