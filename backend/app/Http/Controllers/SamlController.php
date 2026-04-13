@@ -311,15 +311,6 @@ class SamlController extends Controller
     public function slo(Request $request)
     {
         \Log::info('SLO hit: ' . $request->fullUrl());
-
-        $relayState = $request->get('RelayState', 'https://pilargroup.id/login');
-
-        if ($request->has('SAMLRequest')) {
-            session()->flush();
-
-            return redirect($relayState);
-        }
-
         session()->flush();
         return redirect('https://pilargroup.id/login');
     }
