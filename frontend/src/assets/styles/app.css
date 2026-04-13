@@ -1622,6 +1622,17 @@
   transform: rotate(180deg);
 }
 
+.users-table__apps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.users-table__apps-empty {
+  color: #5a6b88;
+}
+
 .users-table__status {
   display: inline-flex;
   align-items: center;
@@ -1638,6 +1649,11 @@
   padding: 0.2rem 0.55rem;
   font-size: 0.68rem;
   line-height: 1.2;
+}
+
+.users-table__status--app {
+  background: rgba(42, 157, 143, 0.14);
+  color: #18786e;
 }
 
 .users-table__status--active {

@@ -27,14 +27,34 @@ function getDetailValue(value) {
 }`  `
 
 function formatAppsForTable(apps) {
-  if (!Array.isArray(apps) || apps.length === 0) {
-    return '-'
+  if (!Array.isArray(apps)) {
+    return []
   }
 
   return apps
     .map((app) => String(app).trim())
     .filter(Boolean)
-    .join(', ')
+}
+
+function renderAppsForTable(apps) {
+  const appList = formatAppsForTable(apps)
+
+  if (appList.length === 0) {
+    return <span className="users-table__apps-empty">-</span>
+  }
+
+  return (
+    <div className="users-table__apps">
+      {appList.map((app, index) => (
+        <span
+          key={`${app}-${index}`}
+          className="users-table__status users-table__status--inline users-table__status--app"
+        >
+          {app}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function renderDetailValue(value) {
@@ -233,7 +253,7 @@ function TableUser({
                       </td>
                       <td>{user.division}</td>
                       <td>{user.role}</td>
-                      <td>{formatAppsForTable(user.apps)}</td>
+                      <td>{renderAppsForTable(user.apps)}</td>
                       <td className="users-table__detail-cell">
                         <button
                           type="button"
