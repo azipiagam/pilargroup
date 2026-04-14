@@ -14,20 +14,19 @@ import { defaultNavigationPath } from '@/constants/navigation'
 import { submitLogin } from '@/services/loginService'
 
 function LoginPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername]         = useState('')
+  const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const params   = new URLSearchParams(window.location.search)
+  const ssoToken = params.get('sso_token')
+
   useEffect(() => {
     const previousTitle = document.title
-
     document.title = 'Login | Pilar Group'
-
-    return () => {
-      document.title = previousTitle
-    }
+    return () => { document.title = previousTitle }
   }, [])
 
   const handleSubmit = async (event) => {
@@ -38,11 +37,15 @@ function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      const { token } = await submitLogin({ username, password })
+      const loginPayload = ssoToken
+        ? { username, password, sso_token: ssoToken }
+        : { username, password }
 
-      const params    = new URLSearchParams(window.location.search)
-      const samlToken = params.get('saml_token')
+      const { token, redirect } = await submitLogin(loginPayload)
 
+      const samlToken = new URLSearchParams(window.location.search).get('saml_token')
+
+      // SAML flow — tidak diubah
       if (samlToken && token) {
         const res = await fetch('/api/saml/respond', {
           method: 'POST',
@@ -53,11 +56,9 @@ function LoginPage() {
           body: JSON.stringify({ saml_token: samlToken }),
         })
 
-        if (!res.ok) {
-          throw new Error('SAML authentication failed.')
-        }
+        if (!res.ok) throw new Error('SAML authentication failed.')
 
-        const html = await res.text()
+        const html   = await res.text()
         const parsed = new DOMParser().parseFromString(html, 'text/html')
 
         const form = document.createElement('form')
@@ -65,13 +66,13 @@ function LoginPage() {
         form.action = parsed.querySelector('form')?.action ?? ''
 
         const inputSaml = document.createElement('input')
-        inputSaml.type = 'hidden'
-        inputSaml.name = 'SAMLResponse'
+        inputSaml.type  = 'hidden'
+        inputSaml.name  = 'SAMLResponse'
         inputSaml.value = parsed.querySelector('input[name="SAMLResponse"]')?.value ?? ''
 
         const inputRelay = document.createElement('input')
-        inputRelay.type = 'hidden'
-        inputRelay.name = 'RelayState'
+        inputRelay.type  = 'hidden'
+        inputRelay.name  = 'RelayState'
         inputRelay.value = parsed.querySelector('input[name="RelayState"]')?.value ?? ''
 
         form.appendChild(inputSaml)
@@ -81,6 +82,13 @@ function LoginPage() {
         return
       }
 
+      // SSO flow
+      if (redirect) {
+        window.location.href = redirect
+        return
+      }
+
+      // Login normal
       window.history.replaceState({}, '', defaultNavigationPath)
       window.dispatchEvent(new PopStateEvent('popstate'))
 
@@ -102,13 +110,11 @@ function LoginPage() {
             src={logoPiagam}
             alt="PT. Pilar Niaga Makmur"
           />
-
           <div className="login-page__brand-text">
             <p className="login-page__brand-name">PT. Pilar Niaga Makmur</p>
             <p className="login-page__brand-caption">Internal Project PT Pilar Niaga Makmur</p>
           </div>
         </div>
-
         <p className="login-page__footer">Copyright 2025 PT. Pilar Niaga Makmur</p>
       </div>
 
@@ -117,7 +123,9 @@ function LoginPage() {
           <div className="login-page__card-header">
             <h2 className="login-page__card-title">Login</h2>
             <p className="login-page__card-subtitle">
-              Welcome back! Please enter your details
+              {ssoToken
+                ? 'Login untuk melanjutkan ke aplikasi yang diminta.'
+                : 'Welcome back! Please enter your details'}
             </p>
           </div>
 
@@ -180,7 +188,6 @@ function LoginPage() {
               )}
             </button>
           </form>
-
         </div>
       </div>
     </section>

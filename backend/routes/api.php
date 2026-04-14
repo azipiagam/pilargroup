@@ -7,6 +7,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\SamlController;
+use App\Http\Controllers\SSOController;
 
 
 Route::get('/user', function (Request $request) {
@@ -62,3 +63,5 @@ Route::middleware(\App\Http\Middleware\AuthMiddleware::class)
         return app(\App\Http\Controllers\SamlController::class)
             ->sendResponse($userId, $request->saml_token);
     });
+
+Route::post('/sso/verify', [SSOController::class, 'verify']);

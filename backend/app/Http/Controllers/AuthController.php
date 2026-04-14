@@ -75,6 +75,30 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        if ($request->filled('sso_token')) {
+            try {
+                $ssoClaims = (array) JWT::decode(
+                    $request->sso_token,
+                    new Key(config('jwt.secret'), 'HS256')
+                );
+
+                if (($ssoClaims['purpose'] ?? '') !== 'sso_context') {
+                    return response()->json(['message' => 'SSO token tidak valid.'], 401);
+                }
+
+                if (($ssoClaims['exp'] ?? 0) < now()->timestamp) {
+                    return response()->json(['message' => 'SSO token sudah expired.'], 401);
+                }
+
+                $redirectUrl = app(SSOController::class)->issueAndRedirect($user, $ssoClaims);
+
+                return response()->json(['redirect' => $redirectUrl]);
+
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'SSO token tidak valid.'], 401);
+            }
+        }
+
         $authUser = $this->buildAuthUserPayload($user);
 
         $token = JWTAuth::claims([
