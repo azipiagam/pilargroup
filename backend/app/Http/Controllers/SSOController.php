@@ -71,6 +71,14 @@ class SSOController extends Controller
         $redirectUri = $ssoClaims['redirect_uri'];
         $state       = $ssoClaims['state'];
 
+        Log::info('SSO issueAndRedirect', [
+            'user_id'     => $user->id,
+            'clientSlug'  => $ssoClaims['client_id'] ?? null,
+            'redirectUri' => $ssoClaims['redirect_uri'] ?? null,
+            'state'       => $ssoClaims['state'] ?? null,
+            'hasAccess'   => $user->hasProjectAccess($ssoClaims['client_id'] ?? ''),
+        ]);
+
         if (!$user->hasProjectAccess($clientSlug)) {
             Log::warning('SSO: user tidak punya akses', [
                 'user_id'   => $user->id,
