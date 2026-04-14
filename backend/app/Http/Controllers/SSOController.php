@@ -37,7 +37,13 @@ class SSOController extends Controller
             abort(403, 'Redirect URI tidak valid.');
         }
 
-        $user = auth()->user();
+        // Ambil user dari request (di-inject AuthMiddleware via merge)
+        $userId = $request->user_id;
+        $user   = CentralUser::find($userId);
+
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan.'], 401);
+        }
 
         $claims = [
             'client_id'    => $request->client_id,
@@ -47,7 +53,6 @@ class SSOController extends Controller
 
         $redirectUrl = $this->issueAndRedirect($user, $claims);
 
-        // Return JSON, bukan redirect — karena dipanggil via fetch dari React
         return response()->json(['redirect_url' => $redirectUrl]);
     }
 
