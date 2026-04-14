@@ -128,16 +128,67 @@ export function getProjectLaunchUrl(project) {
   return launchUrl.toString()
 }
 
-export function launchProject(project) {
-  const launchUrl = getProjectLaunchUrl(project)
-
-  // console.log('Launch URL:', launchUrl)
-
-  if (typeof window !== 'undefined') {
-    window.location.assign(launchUrl)
+export async function launchProject(project) {
+  if (!canAccessProject(project)) {
+    throw new ApiError('Anda tidak memiliki akses ke project ini.')
   }
 
-  return launchUrl
+  if (!project?.isActive) {
+    throw new ApiError('Project ini sedang inactive dan tidak bisa dijalankan.')
+  }
+
+  if (!project?.urlRaw) {
+    throw new ApiError('URL project belum tersedia.')
+  }
+
+  const token = getToken()
+
+  if (!token) {
+    throw new ApiError('Token login tidak ditemukan. Silakan login ulang.')
+  }
+
+  const SSO_PROJECTS = ['ticket']
+
+  if (SSO_PROJECTS.includes(project.slug)) {
+    const projectOrigin = new URL(project.urlRaw).origin
+    const redirectUri   = `${projectOrigin}/api/auth/callback`
+    const state         = crypto.randomUUID()
+    sessionStorage.setItem('sso_state', state)
+
+    const params = new URLSearchParams({
+      client_id:    project.slug,
+      redirect_uri: redirectUri,
+      state,
+    })
+
+    // Fetch dulu dengan token, dapat redirect URL dari response
+    const res = await fetch(`/api/sso/authorize?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new ApiError(data.message || 'SSO gagal.')
+    }
+
+    const data = await res.json()
+    window.location.assign(data.redirect_url)
+    return
+  }
+
+  // Flow lama
+  const launchUrl = buildProjectUrl(project.urlRaw)
+  launchUrl.searchParams.set('token',  token)
+  launchUrl.searchParams.set('source', 'dashboard-it')
+
+  if (project.slug && project.slug !== 'no-slug') {
+    launchUrl.searchParams.set('project', project.slug)
+  }
+
+  window.location.assign(launchUrl.toString())
 }
 
 export async function getDashboardProjects() {

@@ -37,7 +37,6 @@ class SSOController extends Controller
             abort(403, 'Redirect URI tidak valid.');
         }
 
-        // User sudah login — auth()->user() tersedia karena middleware auth.central
         $user = auth()->user();
 
         $claims = [
@@ -46,7 +45,10 @@ class SSOController extends Controller
             'state'        => $request->state,
         ];
 
-        return $this->issueAndRedirect($user, $claims);
+        $redirectUrl = $this->issueAndRedirect($user, $claims);
+
+        // Return JSON, bukan redirect — karena dipanggil via fetch dari React
+        return response()->json(['redirect_url' => $redirectUrl]);
     }
 
     /**
