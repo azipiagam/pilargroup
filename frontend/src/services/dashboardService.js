@@ -133,11 +133,13 @@ export function getProjectLaunchUrl(project) {
 export function launchProject(project) {
   const launchUrl = getProjectLaunchUrl(project)
 
-  if (typeof window !== 'undefined') {
-    window.location.assign(launchUrl)
-  }
+  console.log('Launch URL:', launchUrl)
 
-  return launchUrl
+  // if (typeof window !== 'undefined') {
+  //   window.location.assign(launchUrl)
+  // }
+
+  // return launchUrl
 }
 
 export async function getDashboardProjects() {
