@@ -113,6 +113,7 @@ export function getProjectLaunchUrl(project) {
     ssoUrl.searchParams.set('client_id',    project.slug)
     ssoUrl.searchParams.set('redirect_uri', redirectUri)
     ssoUrl.searchParams.set('state',        state)
+    console.log('SSO URL:', ssoUrl.toString())
 
     return ssoUrl.toString()
   }
