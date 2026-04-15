@@ -154,43 +154,30 @@ if (SSO_PROJECTS.includes(project.slug)) {
 }
 
 export async function launchProject(project) {
-  if (!canAccessProject(project)) {
-    throw new ApiError('Anda tidak memiliki akses ke project ini.')
-  }
-
-  if (!project?.isActive) {
-    throw new ApiError('Project ini sedang inactive dan tidak bisa dijalankan.')
-  }
-
-  if (!project?.urlRaw) {
-    throw new ApiError('URL project belum tersedia.')
-  }
-
-  const token = getToken()
-
-  if (!token) {
-    throw new ApiError('Token login tidak ditemukan. Silakan login ulang.')
-  }
-
   const SSO_PROJECTS = ['ticket']
 
   if (SSO_PROJECTS.includes(project.slug)) {
+    const token = getToken()
+    if (!token) throw new ApiError('Token login tidak ditemukan. Silakan login ulang.')
+
     const projectOrigin = new URL(project.urlRaw).origin
-    const redirectUri   = `${projectOrigin}/api/auth/callback`
-    const state         = crypto.randomUUID()
-    sessionStorage.setItem('sso_state', state)
+
+    // Hit ticket untuk generate & simpan state
+    const ssoUrlRes = await fetch(`${projectOrigin}/api/auth/sso-url`)
+    if (!ssoUrlRes.ok) throw new ApiError('Gagal generate SSO URL.')
+
+    const { state, redirect_uri } = await ssoUrlRes.json()
 
     const params = new URLSearchParams({
       client_id:    project.slug,
-      redirect_uri: redirectUri,
+      redirect_uri: redirect_uri,
       state,
     })
 
-    // Fetch dulu dengan token, dapat redirect URL dari response
     const res = await fetch(`/api/sso/authorize?${params}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
+        'Accept':        'application/json',
       },
     })
 
@@ -205,6 +192,13 @@ export async function launchProject(project) {
   }
 
   // Flow lama
+  const token = getToken()
+  if (!token) throw new ApiError('Token login tidak ditemukan. Silakan login ulang.')
+
+  if (!canAccessProject(project)) throw new ApiError('Anda tidak memiliki akses ke project ini.')
+  if (!project?.isActive) throw new ApiError('Project ini sedang inactive dan tidak bisa dijalankan.')
+  if (!project?.urlRaw) throw new ApiError('URL project belum tersedia.')
+
   const launchUrl = buildProjectUrl(project.urlRaw)
   launchUrl.searchParams.set('token',  token)
   launchUrl.searchParams.set('source', 'dashboard-it')
