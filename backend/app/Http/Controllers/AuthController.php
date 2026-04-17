@@ -28,6 +28,7 @@ class AuthController extends Controller
         $userProfile = DB::connection('pilargroup')
             ->table('central_users as cu')
             ->leftJoin('master_departments as md', 'cu.department_id', '=', 'md.id')
+            ->leftJoin('master_job_levels as mjl', 'cu.job_level_id', '=', 'mjl.id')
             ->select(
                 'cu.id',
                 'cu.internal_id',
@@ -38,7 +39,9 @@ class AuthController extends Controller
                 'cu.department_id',
                 'md.name as department',
                 'cu.job_position',
-                'cu.job_level'
+                'cu.job_level_id',
+                'mjl.name as job_level',
+                'mjl.level as job_level_value'
             )
             ->where('cu.id', $user->id)
             ->first();

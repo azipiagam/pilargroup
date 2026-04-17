@@ -50,6 +50,8 @@ Route::prefix('master')
             Route::post('/projects', [MasterController::class, 'storeProject']);
             Route::put('/projects/{id}', [MasterController::class, 'updateProject']);
             Route::delete('/projects/{id}', [MasterController::class, 'deleteProject']);
+
+            Route::get('/job-levels', [MasterController::class, 'getJobLevels']);
         });
     });
 

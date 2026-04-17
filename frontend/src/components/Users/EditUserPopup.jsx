@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { XClose } from '@untitledui/icons'
-import { jobLevelOptions } from '@/constants/jobLevels'
 import { getDepartments } from '@/services/master/getDepartements'
 import { getProjects } from '@/services/master/getProjects'
 import { normalizePhoneNumber } from '@/utils/normalizePhoneNumber'
@@ -8,6 +7,8 @@ import {
   normalizeManagedUserApps,
   resolveManagedUserApps,
 } from '@/services/manageUsers'
+import { getJobLevels } from '@/services/master/getJobLevels'
+
 
 const initialFormState = {
   username: '',
@@ -86,7 +87,7 @@ function getEditFormState(user) {
     phone: normalizePhoneNumber(rawUser.phone),
     department_id: getTextValue(rawUser.department_id ?? rawUser.departmentId),
     job_position: getTextValue(rawUser.job_position ?? rawUser.jobPosition),
-    job_level: getTextValue(rawUser.job_level ?? rawUser.jobLevel),
+    job_level_id: getTextValue(rawUser.job_level_id ?? rawUser.jobLevelId),
     internal_id: getTextValue(rawUser.internal_id ?? rawUser.internalId),
     is_active: getBooleanSelectValue(rawUser.is_active ?? rawUser.isActive ?? user?.statusKey),
     apps: userApps,
@@ -97,6 +98,7 @@ function EditUserPopup({ user, isSubmitting, errorMessage, onClose, onSubmit }) 
   const [formValues, setFormValues] = useState(() => getEditFormState(user))
   const [departments, setDepartments] = useState([])
   const [projects, setProjects] = useState([])
+  const [jobLevels, setJobLevels] = useState([])
   const [appsDropdownOpen, setAppsDropdownOpen] = useState(false)
   const appsListId = 'edit-user-popup-apps-list'
 
@@ -140,7 +142,11 @@ function EditUserPopup({ user, isSubmitting, errorMessage, onClose, onSubmit }) 
 
     const fetchData = async () => {
       try {
-        const [depts, projs] = await Promise.all([getDepartments(), getProjects()])
+        const [depts, projs, jls] = await Promise.all([
+            getDepartments(),
+            getProjects(),
+            getJobLevels(),
+        ])
 
         if (!isActive) {
           return
@@ -148,6 +154,7 @@ function EditUserPopup({ user, isSubmitting, errorMessage, onClose, onSubmit }) 
 
         setDepartments(depts)
         setProjects(projs)
+        setJobLevels(jls)
         setFormValues((currentValues) => {
           const resolvedApps = resolveManagedUserApps(currentValues.apps, projs)
 
@@ -387,11 +394,19 @@ function EditUserPopup({ user, isSubmitting, errorMessage, onClose, onSubmit }) 
                       onChange={handleChange}
                     >
                       <option value="">Pilih Job Level</option>
-                      {jobLevelOptions.map((jobLevel) => (
-                        <option key={jobLevel} value={jobLevel}>
-                          {jobLevel}
-                        </option>
-                      ))}
+                        <select
+                            className="register-user-popup__select"
+                            name="job_level_id"
+                            value={formValues.job_level_id}
+                            onChange={handleChange}
+                        >
+                            <option value="">Pilih Job Level</option>
+                            {jobLevels.map((jl) => (
+                                <option key={jl.id} value={jl.id}>
+                                    {jl.name}
+                                </option>
+                            ))}
+                        </select>
                     </select>
                   </label>
 

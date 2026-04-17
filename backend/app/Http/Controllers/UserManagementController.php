@@ -17,6 +17,7 @@ class UserManagementController extends Controller
         $users = DB::connection('pilargroup')
             ->table('central_users as cu')
             ->leftJoin('master_departments as md', 'cu.department_id', '=', 'md.id')
+            ->leftJoin('master_job_levels as mjl', 'cu.job_level_id', '=', 'mjl.id')
             ->select(
                 'cu.id',
                 'cu.internal_id',
@@ -27,7 +28,9 @@ class UserManagementController extends Controller
                 'cu.department_id',
                 'md.name as department',
                 'cu.job_position',
-                'cu.job_level',
+                'cu.job_level_id',
+                'mjl.name as job_level',
+                'mjl.level as job_level_value',
                 'cu.is_active',
                 'cu.created_at',
                 'cu.updated_at'
@@ -59,7 +62,7 @@ class UserManagementController extends Controller
             'phone'         => 'nullable|string|max:20',
             'department_id' => 'required|integer|exists:pilargroup.master_departments,id',
             'job_position'  => 'nullable|string',
-            'job_level'     => 'nullable|string',
+            'job_level_id'  => 'nullable|integer|exists:pilargroup.master_job_levels,id',
             'internal_id'   => 'nullable|integer',
             'apps'          => 'required|array',
             'apps.*'        => 'string|exists:pilargroup.master_projects,slug',
@@ -103,7 +106,7 @@ class UserManagementController extends Controller
                     'phone'         => $request->input('phone'),
                     'department_id' => $request->input('department_id'),
                     'job_position'  => $request->input('job_position'),
-                    'job_level'     => $request->input('job_level'),
+                    'job_level_id'  => $request->input('job_level_id'),
                     'is_active'     => 1,
                     'created_at'    => $now,
                     'updated_at'    => $now,
@@ -126,12 +129,21 @@ class UserManagementController extends Controller
                     ]);
             }
 
+            $jobLevelName = null;
+            if ($request->input('job_level_id')) {
+                $jobLevelName = DB::connection('pilargroup')
+                    ->table('master_job_levels')
+                    ->where('id', $request->input('job_level_id'))
+                    ->value('name');
+            }
+
             $newUser = (object) [
                 'username'     => $request->input('username'),
                 'name'         => $request->input('name'),
                 'email'        => $request->input('email'),
                 'phone'        => $request->input('phone'),
                 'job_position' => $request->input('job_position'),
+                'job_level'    => $jobLevelName,
             ];
 
             // Ambil nama department untuk sync
@@ -168,19 +180,12 @@ class UserManagementController extends Controller
     public function update(Request $request, $id)
     {
         // Normalize empty strings to null for nullable fields
-        $nullableFields = ['username', 'password', 'name', 'email', 'phone', 'job_position', 'job_level'];
+        $nullableFields = ['username', 'password', 'name', 'email', 'phone', 'job_position', 'job_level_id'];
         foreach ($nullableFields as $field) {
             if ($request->has($field) && $request->input($field) === '') {
                 $request->merge([$field => null]);
             }
         }
-
-        \Log::info('UPDATE USER REQUEST', [
-            'has_email' => $request->has('email'),
-            'email_val' => $request->input('email'),
-            'has_phone' => $request->has('phone'),
-            'phone_val' => $request->input('phone'),
-        ]);
 
         $request->validate([
             'username'      => 'nullable|string|min:3',
@@ -190,7 +195,7 @@ class UserManagementController extends Controller
             'phone'         => 'nullable|string|max:20',
             'department_id' => 'nullable|integer|exists:pilargroup.master_departments,id',
             'job_position'  => 'nullable|string',
-            'job_level'     => 'nullable|string',
+            'job_level_id' => 'nullable|integer|exists:pilargroup.master_job_levels,id',
             'internal_id'   => 'nullable|integer',
             'is_active'     => 'nullable|boolean',
             'apps'          => 'nullable|array',
@@ -235,7 +240,7 @@ class UserManagementController extends Controller
         if ($request->has('email'))        $updates['email']        = $request->input('email'); // bisa null
         if ($request->has('phone'))        $updates['phone']        = $request->input('phone'); // bisa null
         if ($request->has('job_position')) $updates['job_position'] = $request->input('job_position'); // bisa null
-        if ($request->has('job_level'))    $updates['job_level']    = $request->input('job_level');    // bisa null
+        if ($request->has('job_level_id')) $updates['job_level_id'] = $request->input('job_level_id'); // bisa null
 
         if ($request->has('department_id') && !is_null($request->input('department_id'))) {
             $updates['department_id'] = $request->input('department_id');
@@ -404,7 +409,8 @@ class UserManagementController extends Controller
         $user = DB::connection('pilargroup')
             ->table('central_users as cu')
             ->leftJoin('master_departments as md', 'cu.department_id', '=', 'md.id')
-            ->select('cu.*', 'md.name as department')
+            ->leftJoin('master_job_levels as mjl', 'cu.job_level_id', '=', 'mjl.id')
+            ->select('cu.*', 'md.name as department', 'mjl.name as job_level', 'mjl.level as job_level_value')
             ->where('cu.id', $id)
             ->first();
 

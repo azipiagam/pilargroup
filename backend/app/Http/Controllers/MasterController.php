@@ -198,4 +198,15 @@ class MasterController extends Controller
 
         return response()->json(['message' => 'Project deleted']);
     }
+
+    public function getJobLevels()
+    {
+        $jobLevels = DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->orderBy('level', 'desc')
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name', 'level']);
+
+        return response()->json($jobLevels);
+    }
 }
