@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { XClose } from '@untitledui/icons'
 import { getDepartments } from '@/services/master/getDepartements'
 import { getProjects } from '@/services/master/getProjects'
+import { getJobLevels } from '@/services/master/getJobLevels'
 import { normalizePhoneNumber } from '@/utils/normalizePhoneNumber'
 import {
   normalizeManagedUserApps,
   resolveManagedUserApps,
 } from '@/services/manageUsers'
-import { getJobLevels } from '@/services/master/getJobLevels'
+
 
 
 const initialFormState = {
@@ -18,7 +19,7 @@ const initialFormState = {
   phone: '',
   department_id: '',
   job_position: '',
-  job_level: '',
+  job_level_id: '',
   internal_id: '',
   is_active: 'true',
   apps: [],
@@ -388,25 +389,17 @@ function EditUserPopup({ user, isSubmitting, errorMessage, onClose, onSubmit }) 
                   <label className="register-user-popup__field">
                     <span className="register-user-popup__label">Job Level</span>
                     <select
-                      className="register-user-popup__select"
-                      name="job_level"
-                      value={formValues.job_level}
-                      onChange={handleChange}
+                        className="register-user-popup__select"
+                        name="job_level_id"
+                        value={formValues.job_level_id}
+                        onChange={handleChange}
                     >
-                      <option value="">Pilih Job Level</option>
-                        <select
-                            className="register-user-popup__select"
-                            name="job_level_id"
-                            value={formValues.job_level_id}
-                            onChange={handleChange}
-                        >
-                            <option value="">Pilih Job Level</option>
-                            {jobLevels.map((jl) => (
-                                <option key={jl.id} value={jl.id}>
-                                    {jl.name}
-                                </option>
-                            ))}
-                        </select>
+                        <option value="">Pilih Job Level</option>
+                        {jobLevels.map((jl) => (
+                            <option key={jl.id} value={jl.id}>
+                                {jl.name}
+                            </option>
+                        ))}
                     </select>
                   </label>
 
