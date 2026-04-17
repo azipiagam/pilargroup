@@ -20,7 +20,7 @@ class TicketService
      * Sync user ke ticket (create jika belum ada, update jika sudah ada)
      * Dipanggil setelah store/update user di pilargroup
      */
-    public function syncUser(object $user, ?string $department = null): void
+    public function syncUser(object $user, ?string $department = null, ?string $oldUsername = null): void
     {
         if (!$this->baseUrl || !$this->secret) {
             Log::warning('TicketService: URL atau secret belum dikonfigurasi, sync dilewati.');
@@ -29,6 +29,7 @@ class TicketService
 
         $payload = [
             'username'     => $user->username,
+            'old_username' => $oldUsername ?? $user->username, // kalau tidak ada perubahan username, sama aja
             'name'         => $user->name,
             'email'        => $user->email        ?? null,
             'phone'        => $user->phone        ?? null,
@@ -44,8 +45,9 @@ class TicketService
 
             if ($response->successful()) {
                 Log::info('TicketService: sync berhasil', [
-                    'username' => $user->username,
-                    'action'   => $response->json('action'),
+                    'username'     => $user->username,
+                    'old_username' => $oldUsername,
+                    'action'       => $response->json('action'),
                 ]);
             } else {
                 Log::warning('TicketService: sync gagal', [
@@ -55,7 +57,6 @@ class TicketService
                 ]);
             }
         } catch (\Exception $e) {
-            // Jangan sampai error sync menghentikan proses utama
             Log::error('TicketService: exception', [
                 'username' => $user->username,
                 'error'    => $e->getMessage(),

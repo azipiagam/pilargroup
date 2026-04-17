@@ -68,6 +68,8 @@ class ProfileController extends Controller
         if ($request->input('email') !== null) { $updates['email'] = $request->input('email'); $changed[] = 'email'; }
         if ($request->input('phone') !== null) { $updates['phone'] = $request->input('phone'); $changed[] = 'phone'; }
 
+        $oldUsername = $user->username;
+
         DB::connection('pilargroup')
             ->table('central_users')
             ->where('id', $userId)
@@ -96,7 +98,7 @@ class ProfileController extends Controller
                     ->value('name');
             }
 
-            (new TicketService())->syncUser($updatedUser, $department);
+            (new TicketService())->syncUser($updatedUser, $department, $oldUsername);
         }
 
         return response()->json([

@@ -206,6 +206,8 @@ class UserManagementController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
+        $oldUsername = $user->username;
+
         $now = now()->toDateTimeString();
         $updates = ['updated_at' => $now];
 
@@ -342,7 +344,7 @@ class UserManagementController extends Controller
                     ->value('name');
             }
 
-            (new \App\Services\TicketService())->syncUser($updatedUser, $department);
+            (new \App\Services\TicketService())->syncUser($updatedUser, $department, $oldUsername);
         }
 
         return response()->json(['message' => 'User updated successfully']);
