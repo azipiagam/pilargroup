@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { XClose } from '@untitledui/icons'
 import { getDepartments } from '@/services/master/getDepartements'
 import { getProjects } from '@/services/master/getProjects'
-import { jobLevelOptions } from '@/constants/jobLevels'
+import { getJobLevels } from '@/services/master/getJobLevels'
 import { normalizeManagedUserApps, registerUser } from '@/services/manageUsers'
 import { normalizePhoneNumber } from '@/utils/normalizePhoneNumber'
 
@@ -14,7 +14,7 @@ const initialFormState = {
   phone: '',
   department_id: '',
   job_position: '',
-  job_level: '',
+  job_level_id: '',
   internal_id: '',
   apps: [],
 }
@@ -42,6 +42,7 @@ function RegisterUserPopup({ isOpen, onClose, onSubmit }) {
   const [formValues, setFormValues] = useState(initialFormState)
   const [departments, setDepartments] = useState([])
   const [projects, setProjects] = useState([])
+  const [jobLevels, setJobLevels] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [appsDropdownOpen, setAppsDropdownOpen] = useState(false)
@@ -68,12 +69,14 @@ function RegisterUserPopup({ isOpen, onClose, onSubmit }) {
     // Fetch departments and projects
     const fetchData = async () => {
       try {
-        const [depts, projs] = await Promise.all([
+        const [depts, projs, jls] = await Promise.all([
           getDepartments(),
           getProjects(),
+          getJobLevels(),  // tambah ini
         ])
         setDepartments(depts)
         setProjects(projs)
+        setJobLevels(jls)  // tambah ini
       } catch (err) {
         console.error('Failed to fetch master data:', err)
       }
@@ -154,7 +157,7 @@ function RegisterUserPopup({ isOpen, onClose, onSubmit }) {
         phone: phoneValue || null,
         department_id: parseInt(formValues.department_id),
         job_position: formValues.job_position.trim() || null,
-        job_level: formValues.job_level.trim() || null,
+        job_level_id: formValues.job_level_id ? parseInt(formValues.job_level_id) : null,  // ganti
         internal_id: internalIdValue ? Number.parseInt(internalIdValue, 10) : null,
         apps: selectedApps,
       }
@@ -331,14 +334,14 @@ function RegisterUserPopup({ isOpen, onClose, onSubmit }) {
                     <span className="register-user-popup__label">Job Level</span>
                     <select
                       className="register-user-popup__select"
-                      name="job_level"
-                      value={formValues.job_level}
+                      name="job_level_id"
+                      value={formValues.job_level_id}
                       onChange={handleChange}
                     >
                       <option value="">Pilih Job Level</option>
-                      {jobLevelOptions.map((jobLevel) => (
-                        <option key={jobLevel} value={jobLevel}>
-                          {jobLevel}
+                      {jobLevels.map((jl) => (
+                        <option key={jl.id} value={jl.id}>
+                          {jl.name}
                         </option>
                       ))}
                     </select>
