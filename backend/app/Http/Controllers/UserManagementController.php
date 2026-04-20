@@ -305,7 +305,7 @@ class UserManagementController extends Controller
                     ->value('name');
             }
 
-            (new SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel);
+            (new SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel, $oldUsername);
         }
 
         // Cek apakah user punya akses ticket (dari apps yang dikirim, atau dari DB kalau apps tidak dikirim)

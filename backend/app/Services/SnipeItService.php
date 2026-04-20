@@ -59,7 +59,7 @@ class SnipeItService
         return $match ? $match['id'] : null;
     }
 
-    public function syncUser(object $user, ?string $department = null, ?string $jobLevel = null): void
+    public function syncUser(object $user, ?string $department = null, ?string $jobLevel = null, ?string $oldUsername = null): void
     {
         if (empty($this->token)) {
             Log::warning('SnipeIt sync skipped: SNIPEIT_API_TOKEN not set');
@@ -70,7 +70,6 @@ class SnipeItService
         $firstName = $nameParts[0];
         $lastName  = implode(' ', array_slice($nameParts, 1)) ?: $nameParts[0];
 
-        // Resolve jobtitle: gabung job_position + job_level kalau ada
         $jobPosition = $user->job_position ?? null;
         $jobtitle = null;
         if ($jobPosition && $jobLevel) {
@@ -81,7 +80,6 @@ class SnipeItService
             $jobtitle = $jobLevel;
         }
 
-        // Resolve department_id di assetit
         $departmentId = $this->findDepartmentId($department);
 
         $payload = [
@@ -97,7 +95,9 @@ class SnipeItService
             $payload['department_id'] = $departmentId;
         }
 
-        $match = $this->findUser($user->username);
+        // Lookup by old_username dulu, fallback ke username baru
+        $lookupUsername = $oldUsername ?? $user->username;
+        $match = $this->findUser($lookupUsername);
 
         if ($match) {
             $snipeId  = $match['id'];
@@ -105,16 +105,15 @@ class SnipeItService
                 ->patch("{$this->baseUrl}/api/v1/users/{$snipeId}", $payload);
 
             if ($response->successful()) {
-                Log::info("SnipeIt sync: user {$user->username} updated (id: {$snipeId})");
+                Log::info("SnipeIt sync: user {$lookupUsername} updated to {$user->username} (id: {$snipeId})");
             } else {
-                Log::error("SnipeIt sync update failed for {$user->username}: " . $response->body());
+                Log::error("SnipeIt sync update failed for {$lookupUsername}: " . $response->body());
             }
         } else {
-            // Create user baru dengan permissions default
+            // Create baru
             $password = bin2hex(random_bytes(16));
             $payload['password'] = $password;
             $payload['password_confirmation'] = $password;
-            $payload['activated'] = true;
             $payload['permissions'] = json_encode([
                 "superuser" => "0", "admin" => "0", "import" => "0",
                 "reports.view" => "0", "assets.view" => "0", "assets.create" => "0",

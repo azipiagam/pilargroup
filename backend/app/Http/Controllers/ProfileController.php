@@ -118,7 +118,7 @@ class ProfileController extends Controller
                     ->value('name');
             }
 
-            (new \App\Services\SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel);
+            (new \App\Services\SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel, $oldUsername);
         }
 
         return response()->json([
