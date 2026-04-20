@@ -101,6 +101,26 @@ class ProfileController extends Controller
             (new TicketService())->syncUser($updatedUser, $department, $oldUsername);
         }
 
+        if (in_array('assetit', $userApps)) {
+            $snipeDept = null;
+            if ($updatedUser->department_id) {
+                $snipeDept = DB::connection('pilargroup')
+                    ->table('master_departments')
+                    ->where('id', $updatedUser->department_id)
+                    ->value('name');
+            }
+
+            $snipeJobLevel = null;
+            if ($updatedUser->job_level_id) {
+                $snipeJobLevel = DB::connection('pilargroup')
+                    ->table('master_job_levels')
+                    ->where('id', $updatedUser->job_level_id)
+                    ->value('name');
+            }
+
+            (new \App\Services\SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Berhasil mengubah ' . implode(' dan ', $changed),

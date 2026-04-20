@@ -157,7 +157,15 @@ class UserManagementController extends Controller
             }
 
             // Sync ke SnipeIt (sudah ada)
-            (new SnipeItService())->syncUser($newUser);
+            $jobLevelName = null;
+            if ($request->input('job_level_id')) {
+                $jobLevelName = \DB::connection('pilargroup')
+                    ->table('master_job_levels')
+                    ->where('id', $request->input('job_level_id'))
+                    ->value('name');
+            }
+
+            (new SnipeItService())->syncUser($newUser, $department, $jobLevelName);
 
             // Sync ke ticket hanya kalau user punya akses ticket
             if (in_array('ticket', $request->input('apps', []))) {
@@ -281,7 +289,23 @@ class UserManagementController extends Controller
 
         // Sync ke SnipeIt (sudah ada, kondisinya kita relax jadi selalu sync kalau ada perubahan)
         if (isset($updates['username']) || isset($updates['name']) || isset($updates['email'])) {
-            (new SnipeItService())->syncUser($updatedUser);
+            $snipeDept = null;
+            if ($updatedUser->department_id) {
+                $snipeDept = DB::connection('pilargroup')
+                    ->table('master_departments')
+                    ->where('id', $updatedUser->department_id)
+                    ->value('name');
+            }
+
+            $snipeJobLevel = null;
+            if ($updatedUser->job_level_id) {
+                $snipeJobLevel = DB::connection('pilargroup')
+                    ->table('master_job_levels')
+                    ->where('id', $updatedUser->job_level_id)
+                    ->value('name');
+            }
+
+            (new SnipeItService())->syncUser($updatedUser, $snipeDept, $snipeJobLevel);
         }
 
         // Cek apakah user punya akses ticket (dari apps yang dikirim, atau dari DB kalau apps tidak dikirim)
@@ -393,6 +417,10 @@ class UserManagementController extends Controller
             // Sync delete ke ticket kalau user punya akses ticket
             if (in_array('ticket', $userApps)) {
                 (new \App\Services\TicketService())->deleteUser($username);
+            }
+
+            if (in_array('assetit', $userApps)) {
+                (new SnipeItService())->deleteUser($username);
             }
 
             return response()->json(['message' => 'User deleted successfully']);
