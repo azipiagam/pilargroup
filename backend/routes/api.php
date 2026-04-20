@@ -52,6 +52,9 @@ Route::prefix('master')
             Route::delete('/projects/{id}', [MasterController::class, 'deleteProject']);
 
             Route::get('/job-levels', [MasterController::class, 'getJobLevels']);
+            Route::post('/job-levels', [MasterController::class, 'storeJobLevel']);
+            Route::put('/job-levels/{id}', [MasterController::class, 'updateJobLevel']);
+            Route::delete('/job-levels/{id}', [MasterController::class, 'destroyJobLevel']);
         });
     });
 

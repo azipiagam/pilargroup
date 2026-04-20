@@ -209,4 +209,113 @@ class MasterController extends Controller
 
         return response()->json($jobLevels);
     }
+
+    public function storeJobLevel(Request $request)
+    {
+        $request->validate([
+            'name'  => 'required|string|max:100',
+            'level' => 'required|integer|min:1',
+        ]);
+
+        $exists = DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->where('name', $request->name)
+            ->exists();
+
+        if ($exists) {
+            return response()->json(['message' => 'Job level already exists'], 422);
+        }
+
+        $id = DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->insertGetId([
+                'name'       => $request->name,
+                'level'      => $request->level,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'message' => 'Job level created successfully',
+            'id'      => $id,
+        ], 201);
+    }
+
+    // PUT /api/master/job-levels/{id}
+    public function updateJobLevel(Request $request, $id)
+    {
+        $request->validate([
+            'name'  => 'nullable|string|max:100',
+            'level' => 'nullable|integer|min:1',
+        ]);
+
+        $jobLevel = DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->where('id', $id)
+            ->first();
+
+        if (!$jobLevel) {
+            return response()->json(['message' => 'Job level not found'], 404);
+        }
+
+        $updates = ['updated_at' => now()];
+
+        if ($request->filled('name')) {
+            $exists = DB::connection('pilargroup')
+                ->table('master_job_levels')
+                ->where('name', $request->name)
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json(['message' => 'Job level name already exists'], 422);
+            }
+
+            $updates['name'] = $request->name;
+        }
+
+        if ($request->filled('level')) {
+            $updates['level'] = $request->level;
+        }
+
+        DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->where('id', $id)
+            ->update($updates);
+
+        return response()->json(['message' => 'Job level updated successfully']);
+    }
+
+    // DELETE /api/master/job-levels/{id}
+    public function destroyJobLevel($id)
+    {
+        $jobLevel = DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->where('id', $id)
+            ->first();
+
+        if (!$jobLevel) {
+            return response()->json(['message' => 'Job level not found'], 404);
+        }
+
+        // Cek apakah job level masih dipakai user
+        $inUse = DB::connection('pilargroup')
+            ->table('central_users')
+            ->where('job_level_id', $id)
+            ->exists();
+
+        if ($inUse) {
+            return response()->json([
+                'message' => 'Job level masih digunakan oleh user, tidak bisa dihapus'
+            ], 422);
+        }
+
+        DB::connection('pilargroup')
+            ->table('master_job_levels')
+            ->where('id', $id)
+            ->delete();
+
+        return response()->json(['message' => 'Job level deleted successfully']);
+    }
+    
 }
