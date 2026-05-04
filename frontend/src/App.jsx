@@ -142,7 +142,8 @@ function App() {
         const nextPath = resolvePath(window.location.pathname)
 
         if (window.location.pathname !== nextPath) {
-          window.history.replaceState({}, '', nextPath)
+            const search = nextPath === '/login' ? window.location.search : ''
+            window.history.replaceState({}, '', nextPath + search)
         }
 
         setCurrentPath(nextPath)
