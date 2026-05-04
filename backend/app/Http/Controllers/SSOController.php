@@ -66,6 +66,13 @@ class SSOController extends Controller
         $redirectUri = $ssoClaims['redirect_uri'];
         $state       = $ssoClaims['state'];
 
+            // Tambah log ini sementara
+        Log::info('issueAndRedirect URL', [
+            'redirectUri' => $redirectUri,
+            'state'       => $state,
+            'finalUrl'    => "{$redirectUri}?token=xxx&state={$state}",
+        ]);
+
         Log::info('SSO issueAndRedirect', [
             'user_id'     => $user->id,
             'clientSlug'  => $ssoClaims['client_id'] ?? null,
