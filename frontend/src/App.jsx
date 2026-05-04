@@ -126,7 +126,9 @@ function resolvePath(pathname) {
 }
 
 function App() {
+    console.log('App init URL:', window.location.href)
   const [currentPath, setCurrentPath] = useState(() => resolvePath(window.location.pathname))
+  console.log('resolvePath called, pathname:', window.location.pathname, 'search:', window.location.search)
   useSessionGuard()
 
   useEffect(() => {
