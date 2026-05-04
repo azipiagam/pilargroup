@@ -87,6 +87,21 @@ function LoginPage() {
         window.location.href = redirect
         return
       }
+      const returnUrl = new URLSearchParams(window.location.search).get('return_url')
+
+      if (returnUrl && token) {
+        try {
+          const target = new URL(returnUrl)
+          // Pastikan return_url masih domain pilargroup (security check)
+          if (target.hostname.endsWith('pilargroup.id')) {
+            target.searchParams.set('token', token)
+            window.location.href = target.toString()
+            return
+          }
+        } catch {
+          // URL tidak valid, fallback ke dashboard
+        }
+      }
 
       // Login normal
       window.history.replaceState({}, '', defaultNavigationPath)
