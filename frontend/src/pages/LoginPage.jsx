@@ -95,6 +95,8 @@ const handleSubmit = async (event) => {
     const redirectUri  = params.get('redirect_uri')
     const ssoState     = params.get('state')
 
+    console.log('SSO Authorize params:', { ssoAuthorize, clientId, redirectUri, ssoState })
+
     if (ssoAuthorize && clientId && redirectUri && ssoState && token) {
       try {
         const ssoParams = new URLSearchParams({
