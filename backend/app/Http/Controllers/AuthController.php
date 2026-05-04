@@ -156,7 +156,16 @@ class AuthController extends Controller
 
     public function logout()
     {
+        $userId = request()->user_id;
+
+        // Increment token_version → semua sub-project akan detect via polling
+        DB::connection('pilargroup')
+            ->table('central_users')
+            ->where('id', $userId)
+            ->increment('token_version');
+
         JWTAuth::invalidate(JWTAuth::getToken());
+
         return response()->json(['message' => 'Logged out successfully']);
     }
 }
