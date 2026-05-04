@@ -21,7 +21,7 @@ return [
 
     'allowed_headers' => ['Authorization', 'Content-Type'],
 
-    'exposed_headers' => ['GET', 'POST', 'OPTIONS'],
+    'exposed_headers' => [],
 
     'max_age' => 0,
 
