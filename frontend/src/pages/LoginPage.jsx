@@ -29,92 +29,125 @@ function LoginPage() {
     return () => { document.title = previousTitle }
   }, [])
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    if (isSubmitting) return
+const handleSubmit = async (event) => {
+  event.preventDefault()
+  if (isSubmitting) return
 
-    setErrorMessage('')
-    setIsSubmitting(true)
+  setErrorMessage('')
+  setIsSubmitting(true)
 
-    try {
-      const loginPayload = ssoToken
-        ? { username, password, sso_token: ssoToken }
-        : { username, password }
+  try {
+    const loginPayload = ssoToken
+      ? { username, password, sso_token: ssoToken }
+      : { username, password }
 
-      const { token, redirect } = await submitLogin(loginPayload)
+    const { token, redirect } = await submitLogin(loginPayload)
 
-      const samlToken = new URLSearchParams(window.location.search).get('saml_token')
+    const params    = new URLSearchParams(window.location.search)
+    const samlToken = params.get('saml_token')
 
-      // SAML flow — tidak diubah
-      if (samlToken && token) {
-        const res = await fetch('/api/saml/respond', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ saml_token: samlToken }),
+    // 1. SAML flow
+    if (samlToken && token) {
+      const res = await fetch('/api/saml/respond', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ saml_token: samlToken }),
+      })
+
+      if (!res.ok) throw new Error('SAML authentication failed.')
+
+      const html   = await res.text()
+      const parsed = new DOMParser().parseFromString(html, 'text/html')
+
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = parsed.querySelector('form')?.action ?? ''
+
+      const inputSaml = document.createElement('input')
+      inputSaml.type  = 'hidden'
+      inputSaml.name  = 'SAMLResponse'
+      inputSaml.value = parsed.querySelector('input[name="SAMLResponse"]')?.value ?? ''
+
+      const inputRelay = document.createElement('input')
+      inputRelay.type  = 'hidden'
+      inputRelay.name  = 'RelayState'
+      inputRelay.value = parsed.querySelector('input[name="RelayState"]')?.value ?? ''
+
+      form.appendChild(inputSaml)
+      form.appendChild(inputRelay)
+      document.body.appendChild(form)
+      form.submit()
+      return
+    }
+
+    // 2. SSO redirect (dari login PG sendiri via sso_token)
+    if (redirect) {
+      window.location.href = redirect
+      return
+    }
+
+    // 3. SSO Authorize (direct akses dari ticket)
+    const ssoAuthorize = params.get('sso_authorize')
+    const clientId     = params.get('client_id')
+    const redirectUri  = params.get('redirect_uri')
+    const ssoState     = params.get('state')
+
+    if (ssoAuthorize && clientId && redirectUri && ssoState && token) {
+      try {
+        const ssoParams = new URLSearchParams({
+          client_id:    clientId,
+          redirect_uri: redirectUri,
+          state:        ssoState,
         })
 
-        if (!res.ok) throw new Error('SAML authentication failed.')
-
-        const html   = await res.text()
-        const parsed = new DOMParser().parseFromString(html, 'text/html')
-
-        const form = document.createElement('form')
-        form.method = 'POST'
-        form.action = parsed.querySelector('form')?.action ?? ''
-
-        const inputSaml = document.createElement('input')
-        inputSaml.type  = 'hidden'
-        inputSaml.name  = 'SAMLResponse'
-        inputSaml.value = parsed.querySelector('input[name="SAMLResponse"]')?.value ?? ''
-
-        const inputRelay = document.createElement('input')
-        inputRelay.type  = 'hidden'
-        inputRelay.name  = 'RelayState'
-        inputRelay.value = parsed.querySelector('input[name="RelayState"]')?.value ?? ''
-
-        form.appendChild(inputSaml)
-        form.appendChild(inputRelay)
-        document.body.appendChild(form)
-        form.submit()
-        return
-      }
-
-      // SSO flow
-      if (redirect) {
-        window.location.href = redirect
-        return
-      }
-      const returnUrl = new URLSearchParams(window.location.search).get('return_url')
-
-      if (returnUrl && token) {
-        try {
-          const target = new URL(returnUrl)
-          // Pastikan return_url masih domain pilargroup (security check)
-          if (target.hostname.endsWith('pilargroup.id')) {
-            target.searchParams.set('token', token)
-            window.location.href = target.toString()
-            return
+        const res = await fetch(`/api/sso/authorize?${ssoParams}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
           }
-        } catch {
-          // URL tidak valid, fallback ke dashboard
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          window.location.href = data.redirect_url
+          return
         }
+      } catch {
+        // fallback ke dashboard
       }
-
-      // Login normal
-      window.history.replaceState({}, '', defaultNavigationPath)
-      window.dispatchEvent(new PopStateEvent('popstate'))
-
-    } catch (error) {
-      setErrorMessage(
-        error?.message || 'Login gagal. Periksa kembali username dan password Anda.',
-      )
-    } finally {
-      setIsSubmitting(false)
     }
+
+    // 4. return_url (dari treeview, touchpoint)
+    const returnUrl = params.get('return_url')
+
+    if (returnUrl && token) {
+      try {
+        const target = new URL(returnUrl)
+        if (target.hostname.endsWith('pilargroup.id')) {
+          target.searchParams.set('token', token)
+          window.location.href = target.toString()
+          return
+        }
+      } catch {
+        // URL tidak valid, fallback ke dashboard
+      }
+    }
+
+    // 5. Login normal
+    window.history.replaceState({}, '', defaultNavigationPath)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+
+  } catch (error) {
+    setErrorMessage(
+      error?.message || 'Login gagal. Periksa kembali username dan password Anda.',
+    )
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   return (
     <section className="login-page">
