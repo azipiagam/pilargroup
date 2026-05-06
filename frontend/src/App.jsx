@@ -19,30 +19,6 @@ const routes = {
   '/users': UserPage,
 }
 
-// Handle return_url saat user sudah login (misal: direct akses dari sub-project)
-function handleReturnUrlIfNeeded() {
-  if (!isAuthenticated()) return false
-
-  const params = new URLSearchParams(window.location.search)
-  const returnUrl = params.get('return_url')
-
-  if (!returnUrl) return false
-
-  try {
-    const target = new URL(returnUrl)
-    if (target.hostname.endsWith('pilargroup.id')) {
-      const token = getToken()
-      target.searchParams.set('token', token)
-      window.location.href = target.toString()
-      return true
-    }
-  } catch {
-    // URL tidak valid, lanjut normal
-  }
-
-  return false
-}
-
 async function handleSsoAuthorizeIfNeeded() {
   if (!isAuthenticated()) return false
 
@@ -72,6 +48,30 @@ async function handleSsoAuthorizeIfNeeded() {
     }
   } catch {
     // fallback
+  }
+
+  return false
+}
+
+// Handle return_url saat user sudah login (misal: direct akses dari sub-project)
+function handleReturnUrlIfNeeded() {
+  if (!isAuthenticated()) return false
+
+  const params = new URLSearchParams(window.location.search)
+  const returnUrl = params.get('return_url')
+
+  if (!returnUrl) return false
+
+  try {
+    const target = new URL(returnUrl)
+    if (target.hostname.endsWith('pilargroup.id')) {
+      const token = getToken()
+      target.searchParams.set('token', token)
+      window.location.href = target.toString()
+      return true
+    }
+  } catch {
+    // URL tidak valid, lanjut normal
   }
 
   return false
