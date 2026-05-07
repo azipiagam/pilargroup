@@ -7,10 +7,6 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import TableUser from '@/components/Users/TableUser'
 import { normalizePhoneNumber } from '@/utils/normalizePhoneNumber'
 import {
-  matchesDepartmentFilter,
-  useSelectedDepartmentFilterId,
-} from '@/services/departmentFilter'
-import {
   deleteManagedUser,
   getManagedUsers,
   updateManagedUser,
@@ -111,7 +107,6 @@ function UserPage() {
   const [isUpdatingUser, setIsUpdatingUser] = useState(false)
   const [isDeletingUser, setIsDeletingUser] = useState(false)
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
-  const selectedDepartmentId = useSelectedDepartmentFilterId()
 
   const loadUsers = async () => {
     setUsersError('')
@@ -134,7 +129,7 @@ function UserPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [normalizedSearchQuery, selectedDepartmentId])
+  }, [normalizedSearchQuery])
 
   const handleRefresh = () => {
     setSearchQuery('')
@@ -254,10 +249,6 @@ function UserPage() {
 
   const filteredUsers = userList.filter((user) => {
     const { id, name, email, division, role, status } = user
-
-    if (!matchesDepartmentFilter(user.raw?.department_id, selectedDepartmentId)) {
-      return false
-    }
 
     if (!normalizedSearchQuery) {
       return true
