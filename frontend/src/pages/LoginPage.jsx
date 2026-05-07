@@ -25,7 +25,7 @@ function LoginPage() {
 
   useEffect(() => {
     const previousTitle = document.title
-    document.title = 'Login | Pilar Group'
+    document.title = 'Login | Pilargroup'
     return () => { document.title = previousTitle }
   }, [])
 

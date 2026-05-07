@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const APP_TITLE = 'Pilar Group'
+const APP_TITLE = 'Pilargroup'
 
 export function usePageTitle() {
   useEffect(() => {

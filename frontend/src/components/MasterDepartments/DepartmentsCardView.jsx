@@ -297,7 +297,7 @@ function DepartmentsCardView({ activePath = '/master-departments' }) {
   return (
     <AppLayout
       headerProps={{
-        title: 'Pilar Group',
+        title: 'Pilargroup',
         subtitle: 'Master department management',
         breadcrumb: sharedBreadcrumbItems,
         searchProps: {

@@ -18,7 +18,7 @@ import {
 } from '@/services/departmentFilter'
 
 function Header({
-  title = 'Pilar Group',
+  title = 'Pilargroup',
   breadcrumb = [
     { label: 'All', href: '#' },
     { label: 'Finance', href: '#', active: true },
