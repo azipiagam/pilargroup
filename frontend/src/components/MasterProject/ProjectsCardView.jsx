@@ -568,7 +568,7 @@ function ProjectsCardView({ activePath = '/master-project' }) {
   return (
     <AppLayout
       headerProps={{
-        title: 'Pilar Group',
+        title: 'Pilargroup',
         subtitle: 'Master project management',
         breadcrumb: sharedBreadcrumbItems,
         searchProps: {

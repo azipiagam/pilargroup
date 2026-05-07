@@ -1,64 +1,22 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import {
-  Bell04,
-  ChevronDown,
-  Menu01,
-  RefreshCw05,
-  SearchMd,
-  XClose,
-} from '@untitledui/icons'
-import logoPiagam from '@/assets/image/logo-piagam.png'
-import logoPiagamTransparent from '@/assets/image/logo-piagam2.png'
-import {
-  ALL_DEPARTMENTS_FILTER_ID,
-  ALL_DEPARTMENTS_FILTER_LABEL,
-  getDepartmentFilterOptions,
-  getSelectedDepartmentFilterLabel,
-} from '@/services/departmentFilter'
+import { useEffect, useState } from 'react'
+import { Bell04, Menu01, RefreshCw05, SearchMd, XClose } from '@untitledui/icons'
+import logoPiagam from '@/assets/image/logo-piagam2.svg'
+import logoPiagamTransparent from '@/assets/image/logo-piagam1.svg'
 
 function Header({
-  title = 'Pilar Group',
-  breadcrumb = [
-    { label: 'All', href: '#' },
-    { label: 'Finance', href: '#', active: true },
-    { label: 'Legal', href: '#' }, 
-    { label: 'Product', href: '#' },  
-  ],
+  title = 'Pilargroup',
+  directoryProps,
   onMenuToggle,
   notificationProps,
   onRefresh,
   searchProps,
   showMenuButton = false,
-  departmentFilterProps,
 }) {
   const hasSearch = Boolean(searchProps)
   const hasNotification = Boolean(notificationProps)
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false)
-  const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false)
-  const [departmentDropdownStyle, setDepartmentDropdownStyle] = useState(null)
-  const breadcrumbFilterRef = useRef(null)
-  const departmentDropdownTriggerRef = useRef(null)
-  const departmentDropdownRef = useRef(null)
-
-  const departmentFilterOptions = useMemo(() => {
-    if (!departmentFilterProps) {
-      return []
-    }
-
-    return getDepartmentFilterOptions(departmentFilterProps.departments)
-  }, [departmentFilterProps])
-
-  const selectedDepartmentLabel = useMemo(() => {
-    if (!departmentFilterProps) {
-      return ALL_DEPARTMENTS_FILTER_LABEL
-    }
-
-    return getSelectedDepartmentFilterLabel(
-      departmentFilterProps.departments,
-      departmentFilterProps.selectedDepartmentId,
-    )
-  }, [departmentFilterProps])
+  const rootDirectoryLabel = directoryProps?.rootLabel ?? title
+  const currentDirectoryLabel = directoryProps?.currentLabel ?? ''
 
   useEffect(() => {
     if (!isNotificationModalOpen) {
@@ -78,173 +36,6 @@ function Header({
     }
   }, [isNotificationModalOpen])
 
-  useEffect(() => {
-    if (!isDepartmentDropdownOpen) {
-      return undefined
-    }
-
-    const handlePointerDown = (event) => {
-      if (departmentDropdownTriggerRef.current?.contains(event.target)) {
-        return
-      }
-
-      if (departmentDropdownRef.current?.contains(event.target)) {
-        return
-      }
-
-      setIsDepartmentDropdownOpen(false)
-    }
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setIsDepartmentDropdownOpen(false)
-      }
-    }
-
-    window.addEventListener('mousedown', handlePointerDown)
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('mousedown', handlePointerDown)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isDepartmentDropdownOpen])
-
-  useEffect(() => {
-    setIsDepartmentDropdownOpen(false)
-  }, [departmentFilterProps?.selectedDepartmentId])
-
-  useLayoutEffect(() => {
-    if (!isDepartmentDropdownOpen) {
-      setDepartmentDropdownStyle(null)
-      return undefined
-    }
-
-    const updateDropdownPosition = () => {
-      const triggerElement = departmentDropdownTriggerRef.current
-
-      if (!triggerElement) {
-        return
-      }
-
-      const triggerBounds = triggerElement.getBoundingClientRect()
-      const minimumWidth = 220
-      const preferredWidth = Math.max(triggerBounds.width, minimumWidth)
-      const viewportWidth = window.innerWidth
-      const nextLeft = Math.min(
-        triggerBounds.left,
-        Math.max(12, viewportWidth - preferredWidth - 12),
-      )
-
-      setDepartmentDropdownStyle({
-        top: triggerBounds.bottom + 8,
-        left: Math.max(12, nextLeft),
-        minWidth: preferredWidth,
-      })
-    }
-
-    updateDropdownPosition()
-
-    window.addEventListener('resize', updateDropdownPosition)
-    window.addEventListener('scroll', updateDropdownPosition, true)
-
-    return () => {
-      window.removeEventListener('resize', updateDropdownPosition)
-      window.removeEventListener('scroll', updateDropdownPosition, true)
-    }
-  }, [isDepartmentDropdownOpen])
-
-  const departmentDropdownPortal =
-    isDepartmentDropdownOpen && typeof document !== 'undefined' && departmentDropdownStyle
-      ? createPortal(
-          <div
-            className="breadcrumb-dropdown breadcrumb-dropdown--floating"
-            id="breadcrumb-departments-dropdown"
-            role="menu"
-            ref={departmentDropdownRef}
-            style={departmentDropdownStyle}
-          >
-            {departmentFilterOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`breadcrumb-dropdown__option${
-                  option.id ===
-                  (departmentFilterProps.selectedDepartmentId ?? ALL_DEPARTMENTS_FILTER_ID)
-                    ? ' active'
-                    : ''
-                }`}
-                onClick={() => {
-                  departmentFilterProps.onSelect?.(option.id)
-                  setIsDepartmentDropdownOpen(false)
-                }}
-              >
-                <span className="breadcrumb-dropdown__label">{option.label}</span>
-              </button>
-            ))}
-          </div>,
-          document.body,
-        )
-      : null
-
-  const renderBreadcrumb = () => {
-    if (!departmentFilterProps) {
-      return breadcrumb.map((item, index) => (
-        <div className="breadcrumb-item" key={`${item.label}-${index}`}>
-          <a
-            href={item.href ?? '#'}
-            className={`breadcrumb-link${item.active ? ' active' : ''}`}
-            onClick={(event) => {
-              if (!item.href || item.href === '#') {
-                event.preventDefault()
-              }
-            }}
-          >
-            {item.label}
-          </a>
-
-          {index < breadcrumb.length - 1 ? (
-            <span className="breadcrumb-separator">/</span>
-          ) : null}
-        </div>
-      ))
-    }
-
-    return (
-      <>
-        <div className="breadcrumb-item breadcrumb-item--group">
-          <div className="breadcrumb-group">
-            <button
-              ref={departmentDropdownTriggerRef}
-              type="button"
-              className="breadcrumb-link breadcrumb-link--button active"
-              onClick={() => setIsDepartmentDropdownOpen((currentValue) => !currentValue)}
-              aria-expanded={isDepartmentDropdownOpen}
-              aria-controls="breadcrumb-departments-dropdown"
-            >
-              <span>{selectedDepartmentLabel}</span>
-              <ChevronDown
-                size={14}
-                aria-hidden="true"
-                className={`breadcrumb-dropdown-icon${isDepartmentDropdownOpen ? ' open' : ''}`}
-              />
-            </button>
-          </div>
-        </div>
-
-        {departmentFilterProps.isLoading ? (
-          <span className="breadcrumb-status">Memuat divisi...</span>
-        ) : null}
-
-        {departmentFilterProps.error ? (
-          <span className="breadcrumb-status breadcrumb-status--error">
-            {departmentFilterProps.error}
-          </span>
-        ) : null}
-      </>
-    )
-  }
-
   return (
     <header className="header-main">
       <img
@@ -256,17 +47,6 @@ function Header({
 
       <div className="header-content">
         <div className="header-left">
-          {showMenuButton ? (
-            <button
-              type="button"
-              className="header-menu-button"
-              aria-label="Open sidebar"
-              onClick={onMenuToggle}
-            >
-              <Menu01 size={20} />
-            </button>
-          ) : null}
-
           <div className="header-brand">
             <img
               src={logoPiagam}
@@ -283,16 +63,36 @@ function Header({
 
       <div className="header-breadcrumb">
         <div className="header-breadcrumb-content">
-          <nav
-            className="breadcrumb-nav"
-            aria-label={departmentFilterProps ? 'Filter divisi' : 'Breadcrumb'}
-            ref={breadcrumbFilterRef}
-          >
-            {renderBreadcrumb()}
+          <nav className="breadcrumb-nav" aria-label="Page directory">
+            <div className="breadcrumb-item">
+              <span className="breadcrumb-link breadcrumb-link--static">
+                {rootDirectoryLabel}
+              </span>
+
+              {currentDirectoryLabel ? (
+                <>
+                  <span className="breadcrumb-separator">/</span>
+                  <span className="breadcrumb-link breadcrumb-link--static active">
+                    {currentDirectoryLabel}
+                  </span>
+                </>
+              ) : null}
+            </div>
           </nav>
 
-          {hasSearch || hasNotification || onRefresh ? (
-            <div className="header-toolbar">
+          {showMenuButton || hasSearch || hasNotification || onRefresh ? (
+            <div className={`header-toolbar${showMenuButton ? ' header-toolbar--with-menu' : ''}`}>
+              {showMenuButton ? (
+                <button
+                  type="button"
+                  className="header-menu-button header-menu-button--toolbar"
+                  aria-label="Open sidebar"
+                  onClick={onMenuToggle}
+                >
+                  <Menu01 size={20} />
+                </button>
+              ) : null}
+
               {hasSearch ? (
                 <label
                   className="header-search header-search--compact"
@@ -373,8 +173,6 @@ function Header({
           </div>
         </div>
       ) : null}
-
-      {departmentDropdownPortal}
     </header>
   )
 }

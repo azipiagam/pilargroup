@@ -127,7 +127,7 @@ function DashboardPage({ activePath = '/dashboard' }) {
   return (
     <AppLayout
       headerProps={{
-        title: 'Pilar Group',
+        title: 'Pilargroup',
         subtitle: 'Manage your recruitment process',
         breadcrumb: sharedBreadcrumbItems,
         searchProps: {

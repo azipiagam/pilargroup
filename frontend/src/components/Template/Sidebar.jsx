@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, XClose } from '@untitledui/icons'
+import { ChevronLeft, ChevronRight } from '@untitledui/icons'
 import { useEffect, useState } from 'react'
 
 import {
@@ -262,15 +262,6 @@ function Sidebar({
         ) : (
           <ChevronLeft className="toggle-icon" size={16} />
         )}
-      </button>
-
-      <button
-        type="button"
-        className="sidebar-mobile-dismiss"
-        aria-label="Close Sidebar"
-        onClick={onCloseMobile}
-      >
-        <XClose size={18} />
       </button>
 
       <div className="sidebar-logo">
