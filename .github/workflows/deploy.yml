@@ -1,0 +1,85 @@
+name: Deploy pilargroup.id
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy to GCP
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout
+      # -------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Setup Node & build frontend
+      # -------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies & build frontend
+        run: |
+          npm ci
+          npm run build
+
+      # -------------------------
+      # 3. Setup SSH key
+      # -------------------------
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
+
+      # -------------------------
+      # 4. Pull latest code di VM
+      # -------------------------
+      - name: Pull latest code on VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+            set -e
+            cd /var/www/pilargroup
+            echo '>> Git pull'
+            git pull origin main
+          "
+
+      # -------------------------
+      # 5. Upload hasil build ke VM via SCP
+      # -------------------------
+      - name: Upload build assets to VM
+        run: |
+          scp -i ~/.ssh/deploy_key -r public/build \
+            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/pilargroup/public/
+
+      # -------------------------
+      # 6. Install PHP deps & reload di VM
+      # -------------------------
+      - name: Finalize deploy on VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+            set -e
+            cd /var/www/pilargroup
+
+            echo '>> Composer install'
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo '>> Artisan cache'
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo '>> Reload PHP-FPM'
+            sudo systemctl reload php8.2-fpm
+
+            echo '>> Done'
+          "
