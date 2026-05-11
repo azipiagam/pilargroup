@@ -6,7 +6,7 @@ import LoginPage from '@/pages/LoginPage'
 import MasterDepartementsPage from '@/pages/MasterDepartements'
 import MasterProjectPage from '@/pages/MasterProject'
 import UserPage from '@/pages/UserPage'
-import { isAuthenticated, getToken } from '@/services/api'
+import { isAuthenticated, getToken, getStoredUser } from '@/services/api'
 import { canAccessPath } from '@/services/accessControl'
 import '@/assets/styles/app.css'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
@@ -64,17 +64,39 @@ function handleReturnUrlIfNeeded() {
 
   try {
     const target = new URL(returnUrl)
-    if (target.hostname.endsWith('pilargroup.id')) {
+    if (!target.hostname.endsWith('pilargroup.id')) return false
+
+    // Derive slug dari hostname: framelens.pilargroup.id → "framelens"
+    const slug = target.hostname.replace('.pilargroup.id', '')
+
+    // pilargroup.id sendiri tidak perlu cek akses
+    if (slug === 'pilargroup') {
       const token = getToken()
       target.searchParams.set('token', token)
       window.location.href = target.toString()
       return true
     }
-  } catch {
-    // URL tidak valid, lanjut normal
-  }
 
-  return false
+    // Cek apakah user punya akses ke sub-project
+    const user = getStoredUser()
+    const userApps = user?.apps ?? []
+
+    if (!userApps.includes(slug)) {
+      // Gak punya akses → jangan redirect, biarkan user tetap di dashboard PG
+      // Bersihkan return_url dari URL bar supaya tidak kepanggil lagi
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('return_url')
+      window.history.replaceState({}, '', clean.toString())
+      return false
+    }
+
+    const token = getToken()
+    target.searchParams.set('token', token)
+    window.location.href = target.toString()
+    return true
+  } catch {
+    return false
+  }
 }
 
 // Handle SAML respond jika user sudah login dan ada saml_token di URL
