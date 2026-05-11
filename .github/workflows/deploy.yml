@@ -24,11 +24,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
 
       - name: Install dependencies & build frontend
+        working-directory: frontend
         run: |
-          npm ci
+          npm install
           npm run build
 
       # -------------------------
@@ -42,7 +42,7 @@ jobs:
           ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
 
       # -------------------------
-      # 4. Pull latest code di VM
+      # 4. Pull latest code di VM (backend)
       # -------------------------
       - name: Pull latest code on VM
         run: |
@@ -54,21 +54,21 @@ jobs:
           "
 
       # -------------------------
-      # 5. Upload hasil build ke VM via SCP
+      # 5. Upload hasil build frontend ke VM
       # -------------------------
-      - name: Upload build assets to VM
+      - name: Upload frontend build to VM
         run: |
-          scp -i ~/.ssh/deploy_key -r public/build \
-            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/pilargroup/public/
+          scp -i ~/.ssh/deploy_key -r frontend/dist/* \
+            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/pilargroup/frontend/dist/
 
       # -------------------------
-      # 6. Install PHP deps & reload di VM
+      # 6. Install PHP deps & cache di VM
       # -------------------------
-      - name: Finalize deploy on VM
+      - name: Finalize backend deploy on VM
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
             set -e
-            cd /var/www/pilargroup
+            cd /var/www/pilargroup/backend
 
             echo '>> Composer install'
             composer install --no-dev --optimize-autoloader --no-interaction
@@ -78,8 +78,8 @@ jobs:
             php artisan route:cache
             php artisan view:cache
 
-            echo '>> Reload PHP-FPM'
-            sudo systemctl reload php8.2-fpm
+            echo '>> Reload nginx'
+            sudo systemctl reload nginx
 
-            echo '>> Done'
+            echo '>> Deploy selesai'
           "
